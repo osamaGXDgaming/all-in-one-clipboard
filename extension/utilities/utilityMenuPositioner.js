@@ -52,7 +52,7 @@ function getPositionAtWindow() {
  */
 function keepOnScreen(pos, menuWidth, menuHeight) {
     const monitor = pos.monitor;
-    
+
     // Adjust horizontally
     if (pos.x + menuWidth > monitor.x + monitor.width) {
         pos.x = monitor.x + monitor.width - menuWidth;
@@ -60,7 +60,7 @@ function keepOnScreen(pos, menuWidth, menuHeight) {
     if (pos.x < monitor.x) {
         pos.x = monitor.x;
     }
-    
+
     // Adjust vertically
     if (pos.y + menuHeight > monitor.y + monitor.height) {
         pos.y = monitor.y + monitor.height - menuHeight;
@@ -68,7 +68,7 @@ function keepOnScreen(pos, menuWidth, menuHeight) {
     if (pos.y < monitor.y) {
         pos.y = monitor.y;
     }
-    
+
     return pos;
 }
 
@@ -81,7 +81,7 @@ export function positionMenu(menuActor, settings) {
     const [menuWidth, menuHeight] = menuActor.get_size();
     const mode = settings.get_string('hidden-icon-position-mode');
     let bestPosition;
-    
+
     switch (mode) {
         case 'window':
             bestPosition = getPositionAtWindow();
@@ -96,7 +96,7 @@ export function positionMenu(menuActor, settings) {
             bestPosition = getPositionAtCursor();
             break;
     }
-    
+
     const finalPosition = keepOnScreen(bestPosition, menuWidth, menuHeight);
     menuActor.set_position(finalPosition.x, finalPosition.y);
 }

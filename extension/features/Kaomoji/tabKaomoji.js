@@ -41,6 +41,7 @@ class KaomojiTabContent extends St.Bin {
             recentsMaxItemsKey: 'kaomoji-recents-max-items',
             itemsPerRow: 4,
             categoryPropertyName: 'greaterCategory',
+            enableTabScrolling: true,
             sortCategories: false,
             createSignalPayload: itemData => ({
                 'char': itemData.char || '',

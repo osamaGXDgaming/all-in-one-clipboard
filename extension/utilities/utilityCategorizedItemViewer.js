@@ -134,7 +134,6 @@ class CategorizedItemViewer extends St.BoxLayout {
             vertical: false,
             x_expand: true
         });
-        this._header.spacing = 0;
 
         this._backButton = new St.Button({
             style_class: 'aio-clipboard-back-button button',
@@ -145,23 +144,38 @@ class CategorizedItemViewer extends St.BoxLayout {
         this._backButton.connect('clicked', () => this.emit('back-requested'));
         this._header.add_child(this._backButton);
 
-        this._categoryTabScrollView = new St.ScrollView({
-            style_class: 'aio-clipboard-tab-scrollview',
-            hscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
-            vscrollbar_policy: Gtk.PolicyType.NEVER,
-            x_expand: true,
-            overlay_scrollbars: true,
-            clip_to_allocation: true
-        });
+        // This is the bar that will hold the buttons.
+        this._categoryTabBar = new St.BoxLayout({});
 
-        this._categoryTabBar = new St.BoxLayout({
-            style_class: 'category-tab-bar',
-            x_expand: true,
-            x_align: Clutter.ActorAlign.CENTER
-        });
+        // Enable tab scrolling for categories if configured, otherwise center non-scrolling tabs
+        if (this._config.enableTabScrolling) {
+            // Scrolling Tabs
+            const scrollView = new St.ScrollView({
+                style_class: 'aio-clipboard-tab-scrollview',
+                hscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
+                vscrollbar_policy: Gtk.PolicyType.NEVER,
+                x_expand: false, // Shrink-to-fit is essential
+                overlay_scrollbars: true,
+                clip_to_allocation: true
+            });
+            scrollView.set_child(this._categoryTabBar);
 
-        this._categoryTabScrollView.set_child(this._categoryTabBar);
-        this._header.add_child(this._categoryTabScrollView);
+            const tabContainer = new St.Bin({
+                x_expand: true,
+                x_align: Clutter.ActorAlign.CENTER,
+                child: scrollView
+            });
+            this._header.add_child(tabContainer);
+        } else {
+            // Non-scrolling Tabs
+            const tabContainer = new St.Bin({
+                x_expand: true,
+                x_align: Clutter.ActorAlign.CENTER,
+                child: this._categoryTabBar
+            });
+            this._header.add_child(tabContainer);
+        }
+
         this.add_child(this._header);
 
         // Connect key press events for keyboard navigation of the header
@@ -472,6 +486,14 @@ class CategorizedItemViewer extends St.BoxLayout {
             button.connect('clicked', () => this._setActiveCategory(tabId));
             this._categoryTabBar.add_child(button);
             this._categoryButtons[tabId] = button;
+        }
+
+        // Queue relayout for tab bar when scrolling is enabled to ensure proper layout
+        if (this._config.enableTabScrolling) {
+            GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                this._categoryTabBar.queue_relayout();
+                return GLib.SOURCE_REMOVE;
+            });
         }
     }
 

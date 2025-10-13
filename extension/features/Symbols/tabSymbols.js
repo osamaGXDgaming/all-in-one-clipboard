@@ -41,6 +41,7 @@ class SymbolsTabContent extends St.Bin {
             recentsMaxItemsKey: 'symbols-recents-max-items',
             itemsPerRow: 9,
             categoryPropertyName: 'category',
+            enableTabScrolling: true,
             sortCategories: false,
             createSignalPayload: itemData => ({
                 'char': itemData.char || '',

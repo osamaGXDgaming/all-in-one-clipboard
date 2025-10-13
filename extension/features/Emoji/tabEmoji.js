@@ -69,6 +69,7 @@ class EmojiTabContent extends St.Bin {
             recentsMaxItemsKey: 'emoji-recents-max-items',
             itemsPerRow: 9,
             categoryPropertyName: 'category',
+            enableTabScrolling: false,
             sortCategories: false,
             createSignalPayload: itemData => ({
                 'char': itemData.char || '',
