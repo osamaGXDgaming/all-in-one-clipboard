@@ -63,6 +63,7 @@ class ClipboardManager extends GObject.Object {
         this._debouncing = 0;
         this._isPaused = false;
         this._maxHistory = this._settings.get_int(CLIPBOARD_HISTORY_MAX_ITEMS_KEY);
+        this._processClipboardTimeoutId = 0;
 
         this._ensureDirectories();
         this._setupClipboardMonitoring();
@@ -151,10 +152,14 @@ class ClipboardManager extends GObject.Object {
         }
 
         // Use timeout to allow keyboard events to finish processing
-        GLib.timeout_add(GLib.PRIORITY_LOW, 50, () => {
+        if (this._processClipboardTimeoutId) {
+            GLib.source_remove(this._processClipboardTimeoutId);
+        }
+        this._processClipboardTimeoutId = GLib.timeout_add(GLib.PRIORITY_LOW, 50, () => {
             this._processClipboardContent().catch(e =>
                 console.error(`[AIO-Clipboard] Unhandled error: ${e.message}`)
             );
+            this._processClipboardTimeoutId = 0;
             return GLib.SOURCE_REMOVE;
         });
     }
@@ -842,6 +847,10 @@ class ClipboardManager extends GObject.Object {
      * Cleanup when the manager is destroyed
      */
     destroy() {
+        if (this._processClipboardTimeoutId) {
+            GLib.source_remove(this._processClipboardTimeoutId);
+            this._processClipboardTimeoutId = 0;
+        }
         if (this._selectionOwnerChangedId) {
             this._selection.disconnect(this._selectionOwnerChangedId);
         }
@@ -849,5 +858,6 @@ class ClipboardManager extends GObject.Object {
         if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);
         }
+        super.destroy();
     }
 });

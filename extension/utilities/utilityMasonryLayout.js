@@ -189,7 +189,7 @@ class MasonryLayout extends St.Widget {
      */
     _calculateColumnWidth(effectiveWidth) {
         const totalSpacing = this._spacing * (this._columns - 1);
-        return (effectiveWidth - totalSpacing) / this._columns;
+        return Math.floor((effectiveWidth - totalSpacing) / this._columns);
     }
 
     /**

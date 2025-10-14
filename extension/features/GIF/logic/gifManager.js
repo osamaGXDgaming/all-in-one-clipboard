@@ -7,8 +7,6 @@ const GIF_PROVIDER_KEY = 'gif-provider';
 const GIF_TENOR_API_KEY = 'gif-tenor-api-key';
 const GIF_IMGUR_CLIENT_ID_KEY = 'gif-imgur-client-id';
 
-const _httpSession = new Soup.Session();
-
 /**
  * Custom error class for GifManager-specific errors
  */
@@ -37,6 +35,7 @@ class GifManager extends GObject.Object {
         super._init();
         this._settings = settings;
         this._uuid = extensionUUID;
+        this._httpSession = new Soup.Session();
     }
 
     // ===========================
@@ -329,7 +328,7 @@ class GifManager extends GObject.Object {
 
         try {
             const bytes = await new Promise((resolve, reject) => {
-                _httpSession.send_and_read_async(
+                this._httpSession.send_and_read_async(
                     message,
                     GLib.PRIORITY_DEFAULT,
                     null,
@@ -358,6 +357,20 @@ class GifManager extends GObject.Object {
         } catch (e) {
             console.error(`[AIO-Clipboard] API request to ${url} failed: ${e.message}`);
             throw new GifManagerError('API request failed.', { cause: e });
+        }
+    }
+
+    // ===========================
+    // Lifecycle Methods
+    // ===========================
+
+    /**
+     * Cleans up resources when the manager is destroyed, such as aborting ongoing network requests.
+     */
+    destroy() {
+        if (this._httpSession) {
+            this._httpSession.abort();
+            this._httpSession = null;
         }
     }
 });

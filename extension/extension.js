@@ -39,7 +39,7 @@ const MAIN_TAB_ICONS_MAP = {
  */
 const AllInOneClipboardIndicator = GObject.registerClass(
 class AllInOneClipboardIndicator extends PanelMenu.Button {
-    _init(settings, extension, clipboardManager) {
+        _init(settings, extension, clipboardManager) {
         super._init(0.5, _("All-in-One Clipboard"), false);
 
         this._settings = settings;
@@ -54,6 +54,7 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
 
         this._currentTabVisibilitySignalId = 0;
         this._currentTabNavigateSignalId = 0;
+        this._selectTabTimeoutId = 0;
 
         this.TAB_NAMES = [
             _("Recently Used"),
@@ -242,8 +243,12 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
 
             // Always call onTabSelected after the actor is set as child and ready
             // Use a small delay to ensure the UI is fully rendered
-            GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, 10, () => {
+            if (this._selectTabTimeoutId) {
+                GLib.source_remove(this._selectTabTimeoutId);
+            }
+            this._selectTabTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, 10, () => {
                 this._currentTabActor?.onTabSelected?.();
+                this._selectTabTimeoutId = 0;
                 return GLib.SOURCE_REMOVE;
             });
 
@@ -336,6 +341,10 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
      * @override
      */
     destroy() {
+        if (this._selectTabTimeoutId) {
+            GLib.source_remove(this._selectTabTimeoutId);
+            this._selectTabTimeoutId = 0;
+        }
         this._disconnectTabSignals(this._currentTabActor);
         this._currentTabActor?.destroy();
         this._currentTabActor = null;
@@ -360,6 +369,7 @@ export default class AllInOneClipboardExtension extends Extension {
         this._settings = null;
         this._clipboardManager = null;
         this._settingsSignalIds = [];
+        this._shortcutTimeoutId = 0;
     }
 
     /**
@@ -494,8 +504,12 @@ export default class AllInOneClipboardExtension extends Extension {
                     this._indicator.toggleMenu();
                 }
 
-                GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
+                if (this._shortcutTimeoutId) {
+                    GLib.source_remove(this._shortcutTimeoutId);
+                }
+                this._shortcutTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
                     this._indicator._selectTab(tabName);
+                    this._shortcutTimeoutId = 0;
                     return GLib.SOURCE_REMOVE;
                 });
             });
@@ -545,6 +559,10 @@ export default class AllInOneClipboardExtension extends Extension {
      * @override
      */
     disable() {
+        if (this._shortcutTimeoutId) {
+            GLib.source_remove(this._shortcutTimeoutId);
+            this._shortcutTimeoutId = 0;
+        }
         this._unbindKeyboardShortcuts();
 
         this._settingsSignalIds.forEach(id => {
@@ -559,6 +577,21 @@ export default class AllInOneClipboardExtension extends Extension {
         }).catch(() => {
             // Ignore
         });
+
+        try {
+            const gifCacheDir = Gio.File.new_for_path(
+                GLib.build_filenamev([
+                    GLib.get_user_cache_dir(),
+                    this.uuid,
+                    'gif-previews'
+                ])
+            );
+            if (gifCacheDir.query_exists(null)) {
+                gifCacheDir.delete_async(GLib.PRIORITY_DEFAULT, null, null);
+            }
+        } catch (e) {
+            // Ignore cache deletion errors
+        }
 
         this._indicator?.destroy();
         this._indicator = null;

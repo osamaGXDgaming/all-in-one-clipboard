@@ -1,10 +1,7 @@
-import Gdk from 'gi://Gdk';
-import GdkPixbuf from 'gi://GdkPixbuf';
+import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
-import Gtk from 'gi://Gtk';
-import Clutter from 'gi://Clutter';
 import Soup from 'gi://Soup';
 import St from 'gi://St';
 import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -22,8 +19,6 @@ const GIF_RECENTS_MAX_ITEMS_KEY = 'gif-recents-max-items';
 const RECENTS_ICON_FILENAME = 'utility-recents-symbolic.svg';
 const SEARCH_DEBOUNCE_TIME_MS = 300;
 const ITEMS_PER_ROW = 4;
-
-const _httpSession = new Soup.Session();
 
 /**
  * GIFTabContent - Main UI component for the GIF tab.
@@ -59,7 +54,20 @@ class GIFTabContent extends St.BoxLayout {
             y_expand: true
         });
 
+        this._httpSession = new Soup.Session();
         this._extension = extension;
+
+        this._gifCacheDir = GLib.build_filenamev([
+            GLib.get_user_cache_dir(),
+            this._extension.uuid,
+            'gif-previews'
+        ]);
+
+        const cacheDirFile = Gio.File.new_for_path(this._gifCacheDir);
+        if (!cacheDirFile.query_exists(null)) {
+            cacheDirFile.make_directory_with_parents(null);
+        }
+
         this._settings = settings;
         this._gifManager = new GifManager(settings, extension.uuid);
 
@@ -138,8 +146,8 @@ class GIFTabContent extends St.BoxLayout {
 
         this.headerScrollView = new St.ScrollView({
             style_class: 'aio-clipboard-tab-scrollview',
-            hscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
-            vscrollbar_policy: Gtk.PolicyType.NEVER,
+            hscrollbar_policy: St.PolicyType.AUTOMATIC,
+            vscrollbar_policy: St.PolicyType.NEVER,
             overlay_scrollbars: true,
             x_expand: true
         });
@@ -211,8 +219,8 @@ class GIFTabContent extends St.BoxLayout {
         this._scrollView = new St.ScrollView({
             style_class: 'menu-scrollview',
             overlay_scrollbars: true,
-            hscrollbar_policy: Gtk.PolicyType.NEVER,
-            vscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
+            hscrollbar_policy: St.PolicyType.NEVER,
+            vscrollbar_policy: St.PolicyType.AUTOMATIC,
             clip_to_allocation: true,
             x_expand: true,
             y_expand: true
@@ -1127,22 +1135,30 @@ class GIFTabContent extends St.BoxLayout {
      */
     async _setIconFromUrl(bin, url, renderSession) {
         try {
-            const bytes = await this._fetchImageBytes(url);
+            const hash = GLib.compute_checksum_for_string(GLib.ChecksumType.SHA256, url, -1);
+            const filename = `${hash}.gif`;
+            const file = Gio.File.new_for_path(GLib.build_filenamev([this._gifCacheDir, filename]));
 
-            // Abort if the UI context has changed or the widget is not yet allocated.
-            if (this._isDestroyed || renderSession !== this._renderSession || bin.width <= 0 || bin.height <= 0) {
-                return;
+            if (!file.query_exists(null)) {
+                const bytes = await this._fetchImageBytes(url);
+                await file.replace_contents_bytes_async(bytes, null, false, Gio.FileCreateFlags.NONE, null);
             }
 
-            const pixbuf = this._createPixbufFromBytes(bytes);
-
-            // Re-check after pixbuf creation.
             if (this._isDestroyed || renderSession !== this._renderSession) {
                 return;
             }
 
-            const drawingArea = this._createDrawingArea(bin, pixbuf);
-            bin.set_child(drawingArea);
+            const imageActor = new St.Bin({
+                style: `
+                    background-image: url("file://${file.get_path()}");
+                    background-size: cover;
+                    background-repeat: no-repeat;
+                `,
+                x_expand: true,
+                y_expand: true,
+            });
+
+            bin.set_child(imageActor);
 
         } catch (e) {
             this._handleImageLoadError(bin, e, renderSession);
@@ -1163,7 +1179,7 @@ class GIFTabContent extends St.BoxLayout {
         });
 
         return new Promise((resolve, reject) => {
-            _httpSession.send_and_read_async(
+            this._httpSession.send_and_read_async(
                 message,
                 GLib.PRIORITY_DEFAULT,
                 null,
@@ -1187,56 +1203,6 @@ class GIFTabContent extends St.BoxLayout {
     }
 
     /**
-     * Create a pixbuf from image bytes.
-     *
-     * @param {GLib.Bytes} bytes - The image bytes
-     * @returns {GdkPixbuf.Pixbuf} The pixbuf
-     * @private
-     */
-    _createPixbufFromBytes(bytes) {
-        const stream = Gio.MemoryInputStream.new_from_bytes(bytes);
-        const pixbuf = GdkPixbuf.Pixbuf.new_from_stream(stream, null);
-        stream.close(null);
-        return pixbuf;
-    }
-
-    /**
-     * Create a drawing area to display a pixbuf.
-     *
-     * @param {St.Bin} bin - The container widget
-     * @param {GdkPixbuf.Pixbuf} pixbuf - The pixbuf to display
-     * @returns {St.DrawingArea} The drawing area
-     * @private
-     */
-    _createDrawingArea(bin, pixbuf) {
-        const borderWidth = 2;
-        const drawingArea = new St.DrawingArea({
-            width: bin.width - (borderWidth * 2),
-            height: bin.height - (borderWidth * 2),
-            x: borderWidth,
-            y: borderWidth
-        });
-
-        drawingArea.connect('repaint', () => {
-            const cr = drawingArea.get_context();
-            const [areaWidth, areaHeight] = drawingArea.get_surface_size();
-            const pixbufWidth = pixbuf.get_width();
-            const pixbufHeight = pixbuf.get_height();
-            const scaleX = areaWidth / pixbufWidth;
-            const scaleY = areaHeight / pixbufHeight;
-
-            cr.save();
-            cr.scale(scaleX, scaleY);
-            Gdk.cairo_set_source_pixbuf(cr, pixbuf, 0, 0);
-            cr.paint();
-            cr.restore();
-            cr.$dispose();
-        });
-
-        return drawingArea;
-    }
-
-    /**
      * Handle errors when loading preview images.
      *
      * @param {St.Bin} bin - The container widget
@@ -1245,7 +1211,7 @@ class GIFTabContent extends St.BoxLayout {
      * @private
      */
     _handleImageLoadError(bin, error, renderSession) {
-        if (this._isDestroyed || renderSession !== this._renderSession) {
+        if (this._isDestroyed || renderSession !== this._renderSession || !bin.get_stage()) {
             return;
         }
 
@@ -1259,7 +1225,6 @@ class GIFTabContent extends St.BoxLayout {
             console.warn(`[AIO-Clipboard] Failed to load GIF preview: ${error.message}`);
         }
     }
-
 
     /**
      * Render the grid with GIF items.
@@ -1421,6 +1386,11 @@ class GIFTabContent extends St.BoxLayout {
      */
     destroy() {
         this._isDestroyed = true;
+
+        if (this._httpSession) {
+            this._httpSession.abort();
+            this._httpSession = null;
+        }
 
         if (this._settings && this._providerChangedSignalId > 0) {
             this._settings.disconnect(this._providerChangedSignalId);

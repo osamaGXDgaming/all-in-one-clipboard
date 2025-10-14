@@ -23,7 +23,7 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         this._addAutoPasteGroup(page, settings);
         this._addEmojiSettingsGroup(page, settings);
         this._addGifSettingsGroup(page, settings);
-        this._addDataManagementGroup(page, settings);
+        this._addDataManagementGroup(page, settings, window);
     }
 
     _addGeneralGroup(page, settings) {
@@ -431,7 +431,7 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         });
     }
 
-    _addDataManagementGroup(page, settings) {
+    _addDataManagementGroup(page, settings, window) {
         const group = new Adw.PreferencesGroup({
             title: _('Data Management'),
             description: _('Permanently delete cached recent items. This action cannot be undone.')
@@ -473,8 +473,6 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
             return button;
         };
 
-        const parentWindow = page.get_root();
-
         // Define the rows for each recent type
         const recentTypes = [
             { key: 'emoji', title: _('Recent Emojis') },
@@ -485,7 +483,7 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
 
         recentTypes.forEach(type => {
             const row = new Adw.ActionRow({ title: type.title });
-            row.add_suffix(createClearButton(type.key, parentWindow));
+            row.add_suffix(createClearButton(type.key, window));
             group.add(row);
         });
 
@@ -494,7 +492,7 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
             title: _('All Recent Items'),
             subtitle: _('Clears all of the above recent items lists at once.')
         });
-        clearAllRow.add_suffix(createClearButton('all', parentWindow));
+        clearAllRow.add_suffix(createClearButton('all', window));
         group.add(clearAllRow);
     }
 }

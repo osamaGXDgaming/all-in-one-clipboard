@@ -15,7 +15,6 @@ import { RecentItemsManager } from '../../utilities/utilityRecents.js';
 // Constants
 // ============================================================================
 
-const _httpSession = new Soup.Session();
 const PINNED_ITEM_HEIGHT = 48;
 const MAX_PINNED_DISPLAY_COUNT = 5;
 
@@ -54,10 +53,12 @@ class RecentlyUsedTabContent extends St.BoxLayout {
             y_expand: true
         });
 
+        this._httpSession = new Soup.Session();
         this._isDestroyed = false;
         this._extension = extension;
         this._settings = settings;
         this._clipboardManager = clipboardManager;
+        this._settingsBtnFocusTimeoutId = 0;
 
         // Store recent managers for different feature types
         this._recentManagers = {};
@@ -374,9 +375,10 @@ class RecentlyUsedTabContent extends St.BoxLayout {
         // Add nested scroll view if too many pinned items
         if (items.length > MAX_PINNED_DISPLAY_COUNT) {
             pinnedScrollView = new St.ScrollView({
-                hscrollbar_policy: Gtk.PolicyType.NEVER,
-                vscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
-                overlay_scrollbars: true
+                hscrollbar_policy: St.PolicyType.NEVER,
+                vscrollbar_policy: St.PolicyType.AUTOMATIC,
+                overlay_scrollbars: true,
+                x_expand: true
             });
             pinnedScrollView.style = `height: ${MAX_PINNED_DISPLAY_COUNT * PINNED_ITEM_HEIGHT}px;`;
             pinnedScrollView.set_child(container);
@@ -705,7 +707,7 @@ class RecentlyUsedTabContent extends St.BoxLayout {
                 method: 'GET',
                 uri: GLib.Uri.parse(url, GLib.UriFlags.NONE)
             });
-            const bytes = await _httpSession.send_and_read_async(
+            const bytes = await this._httpSession.send_and_read_async(
                 message,
                 GLib.PRIORITY_DEFAULT,
                 null
@@ -795,8 +797,12 @@ class RecentlyUsedTabContent extends St.BoxLayout {
             this._settingsBtn.grab_key_focus();
 
             // Disable focus participation again after focusing
-            GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10, () => {
+            if (this._settingsBtnFocusTimeoutId) {
+                GLib.source_remove(this._settingsBtnFocusTimeoutId);
+            }
+            this._settingsBtnFocusTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10, () => {
                 this._settingsBtn.can_focus = false;
+                this._settingsBtnFocusTimeoutId = 0;
                 return GLib.SOURCE_REMOVE;
             });
         } else {
@@ -863,7 +869,15 @@ class RecentlyUsedTabContent extends St.BoxLayout {
      * Cleanup: disconnect all signals and destroy managers
      */
     destroy() {
+        if (this._settingsBtnFocusTimeoutId) {
+            GLib.source_remove(this._settingsBtnFocusTimeoutId);
+            this._settingsBtnFocusTimeoutId = 0;
+        }
         this._isDestroyed = true;
+        if (this._httpSession) {
+            this._httpSession.abort();
+            this._httpSession = null;
+        }
         this._signalIds.forEach(({ obj, id }) => {
             try {
                 obj.disconnect(id);

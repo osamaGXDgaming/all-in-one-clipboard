@@ -91,6 +91,7 @@ class CategorizedItemViewer extends St.BoxLayout {
         this._currentSearchText = "";
         this._lastActiveTabBeforeSearch = null;
         this._gridAllButtons = [];
+        this._setActiveCategoryTimeoutId = 0;
 
         this._buildUI();
 
@@ -520,8 +521,12 @@ class CategorizedItemViewer extends St.BoxLayout {
         this._applyFiltersAndRenderGrid();
 
         // After re-rendering, restore focus to the search bar for a smooth user experience.
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, 100, () => {
+        if (this._setActiveCategoryTimeoutId) {
+            GLib.source_remove(this._setActiveCategoryTimeoutId);
+        }
+        this._setActiveCategoryTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, 100, () => {
             this._searchComponent?.grabFocus();
+            this._setActiveCategoryTimeoutId = 0;
             return GLib.SOURCE_REMOVE;
         });
     }
@@ -635,6 +640,10 @@ class CategorizedItemViewer extends St.BoxLayout {
      * Cleans up resources when the component is destroyed.
      */
     destroy() {
+        if (this._setActiveCategoryTimeoutId) {
+            GLib.source_remove(this._setActiveCategoryTimeoutId);
+            this._setActiveCategoryTimeoutId = 0;
+        }
         if(this._recentsChangedSignalId > 0) {
             try { this._recentItemsManager.disconnect(this._recentsChangedSignalId); } catch(e) { /* Ignore */ }
         }

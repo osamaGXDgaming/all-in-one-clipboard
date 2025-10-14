@@ -2,6 +2,7 @@ import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 
 let _virtualKeyboard = null;
+let _pasteTimeoutId = 0;
 
 /**
  * Get or create the virtual keyboard device
@@ -21,7 +22,10 @@ function getVirtualKeyboard() {
  */
 export function triggerPaste() {
     return new Promise((resolve) => {
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
+        if (_pasteTimeoutId) {
+            GLib.source_remove(_pasteTimeoutId);
+        }
+        _pasteTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
             const keyboard = getVirtualKeyboard();
             const timestamp = GLib.get_monotonic_time();
 
@@ -37,6 +41,7 @@ export function triggerPaste() {
                 console.error('[AIO-Clipboard] Failed to trigger paste:', e);
             }
 
+            _pasteTimeoutId = 0;
             resolve();
             return GLib.SOURCE_REMOVE;
         });
@@ -62,5 +67,9 @@ export function shouldAutoPaste(settings, featureKey) {
  * Cleanup virtual keyboard on extension disable
  */
 export function cleanup() {
+    if (_pasteTimeoutId) {
+        GLib.source_remove(_pasteTimeoutId);
+        _pasteTimeoutId = 0;
+    }
     _virtualKeyboard = null;
 }

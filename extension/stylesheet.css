@@ -1,3 +1,7 @@
+.aio-clipboard-container .gif-preview-icon {
+    background-size: contain;
+}
+
 /* --- Main Extension UI --- */
 .aio-clipboard-container .aio-clipboard-tab-button {
     min-width: 30px;
@@ -231,7 +235,7 @@
 }
 
 .aio-clipboard-container .gif-grid-button {
-    padding: 0;
+    padding: 2px;
     margin: 0;
     background-color: transparent;
     transition: background-color 0.1s ease-out;
