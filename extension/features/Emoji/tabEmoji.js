@@ -60,14 +60,15 @@ class EmojiTabContent extends St.Bin {
         this._skinToneSettingsSignalIds = [];
         this._viewer = null;
 
-        // Call the async setup method and handle potential errors
-        this._setup(extension, settings).catch(e => {
+        // Initialize asynchronous properties
+        this._setupPromise = this._setup(extension, settings);
+        this._setupPromise.catch(e => {
             console.error('[AIO-Clipboard] Failed to setup Emoji tab:', e);
         });
     }
 
     async _setup(extension, settings) {
-        // Build the skinnable character set.
+        // Await the critical data dependency first.
         await this._buildSkinnableCharSet(extension.path);
 
         // Load GSettings now that data is ready.
@@ -331,8 +332,13 @@ class EmojiTabContent extends St.Bin {
     /**
      * Called by the parent when this tab is selected.
      */
-    onTabSelected() {
+    async onTabSelected() {
+        // Wait for the setup promise to resolve
+        await this._setupPromise;
+
         this.emit('set-main-tab-bar-visibility', false);
+
+        // We can now safely call this, because we know _viewer is not null.
         this._viewer?.onSelected();
     }
 
