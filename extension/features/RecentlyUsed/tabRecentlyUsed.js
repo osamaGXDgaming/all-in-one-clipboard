@@ -2,7 +2,6 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
-import Gtk from 'gi://Gtk';
 import Pango from 'gi://Pango';
 import Soup from 'gi://Soup';
 import St from 'gi://St';
@@ -45,8 +44,8 @@ class RecentlyUsedTabContent extends St.BoxLayout {
      * @param {Gio.Settings} settings - Extension settings
      * @param {object} clipboardManager - Manager for clipboard operations
      */
-    _init(extension, settings, clipboardManager) {
-        super._init({
+    constructor(extension, settings, clipboardManager) {
+        super({
             vertical: true,
             style_class: 'recently-used-tab-content',
             x_expand: true,
@@ -98,8 +97,8 @@ class RecentlyUsedTabContent extends St.BoxLayout {
 
         // Layer 1: Scrollable content container (bottom layer)
         this._scrollView = new St.ScrollView({
-            hscrollbar_policy: Gtk.PolicyType.NEVER,
-            vscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
+            hscrollbar_policy: St.PolicyType.NEVER,
+            vscrollbar_policy: St.PolicyType.AUTOMATIC,
             x_expand: true,
             y_expand: true,
             overlay_scrollbars: true,

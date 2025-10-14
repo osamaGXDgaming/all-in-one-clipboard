@@ -30,8 +30,8 @@ class ClipboardTabContent extends St.Bin {
      * @param {Gio.Settings} settings - Extension settings
      * @param {ClipboardManager} manager - Clipboard manager instance
      */
-    _init(extension, settings, manager) {
-        super._init({
+    constructor(extension, settings, manager) {
+        super({
             y_align: Clutter.ActorAlign.FILL,
             x_align: Clutter.ActorAlign.FILL,
             x_expand: true,

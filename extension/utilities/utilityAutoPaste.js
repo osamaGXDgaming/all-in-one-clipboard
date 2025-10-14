@@ -66,7 +66,7 @@ export function shouldAutoPaste(settings, featureKey) {
 /**
  * Cleanup virtual keyboard on extension disable
  */
-export function cleanup() {
+export function cleanupAutoPaste() {
     if (_pasteTimeoutId) {
         GLib.source_remove(_pasteTimeoutId);
         _pasteTimeoutId = 0;

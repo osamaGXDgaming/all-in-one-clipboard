@@ -45,8 +45,8 @@ export const EmojiTabContent = GObject.registerClass({
     },
 },
 class EmojiTabContent extends St.Bin {
-    _init(extension, settings) {
-        super._init({
+    constructor(extension, settings) {
+        super({
             style_class: 'emoji-tab-content',
             x_expand: true,
             y_expand: true,
@@ -54,14 +54,26 @@ class EmojiTabContent extends St.Bin {
             y_align: Clutter.ActorAlign.FILL
         });
 
+        // Initialize synchronous properties
         this._settings = settings;
         this._skinToneableBaseChars = new Set();
         this._skinToneSettingsSignalIds = [];
         this._viewer = null;
 
-        this._loadAndApplyCustomSkinToneSettings();
-        this._buildSkinnableCharSet(extension.path);
+        // Call the async setup method and handle potential errors
+        this._setup(extension, settings).catch(e => {
+            console.error('[AIO-Clipboard] Failed to setup Emoji tab:', e);
+        });
+    }
 
+    async _setup(extension, settings) {
+        // Build the skinnable character set.
+        await this._buildSkinnableCharSet(extension.path);
+
+        // Load GSettings now that data is ready.
+        this._loadAndApplyCustomSkinToneSettings();
+
+        // Configure and create the main UI component.
         const config = {
             jsonPath: 'data/emojis.json',
             parserClass: EmojiJsonParser,
@@ -85,7 +97,7 @@ class EmojiTabContent extends St.Bin {
         this._viewer = new CategorizedItemViewer(extension, settings, config);
         this.set_child(this._viewer);
 
-        // Connect to Viewer Signals
+        // Connect signals to the now-existing viewer.
         this._viewer.connect('item-selected', (source, jsonPayload) => {
             this._onItemSelected(jsonPayload, extension);
         });
@@ -94,7 +106,7 @@ class EmojiTabContent extends St.Bin {
             this.emit('navigate-to-main-tab', _("Recently Used"));
         });
 
-        // Connect to GSettings Signals
+        // Connect GSettings signals for skin tone changes.
         const skinToneKeys = [
             ENABLE_CUSTOM_SKIN_TONES_KEY,
             CUSTOM_SKIN_TONE_PRIMARY_KEY,

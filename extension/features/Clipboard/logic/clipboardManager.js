@@ -28,8 +28,8 @@ class ClipboardManager extends GObject.Object {
      * @param {string} uuid - Extension UUID
      * @param {Gio.Settings} settings - Extension settings
      */
-    _init(uuid, settings) {
-        super._init();
+    constructor(uuid, settings) {
+        super();
 
         this._uuid = uuid;
         this._settings = settings;

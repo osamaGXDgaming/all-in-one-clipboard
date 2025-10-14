@@ -22,8 +22,8 @@ export const SymbolsTabContent = GObject.registerClass({
     },
 },
 class SymbolsTabContent extends St.Bin {
-    _init(extension, settings) {
-        super._init({
+    constructor(extension, settings) {
+        super({
             style_class: 'symbols-tab-content',
             x_expand: true,
             y_expand: true,

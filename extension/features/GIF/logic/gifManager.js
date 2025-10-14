@@ -31,8 +31,8 @@ class GifManager extends GObject.Object {
      * @param {Gio.Settings} settings - Extension settings object
      * @param {string} extensionUUID - Extension UUID for logging
      */
-    _init(settings, extensionUUID) {
-        super._init();
+    constructor(settings, extensionUUID) {
+        super();
         this._settings = settings;
         this._uuid = extensionUUID;
         this._httpSession = new Soup.Session();

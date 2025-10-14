@@ -9,8 +9,9 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import { createThemedIcon } from './utilities/utilityThemedIcon.js';
+import { cleanupAutoPaste } from './utilities/utilityAutoPaste.js';
 import { ClipboardManager } from './features/Clipboard/logic/clipboardManager.js';
+import { createThemedIcon } from './utilities/utilityThemedIcon.js';
 import { positionMenu } from './utilities/utilityMenuPositioner.js';
 
 /**
@@ -39,8 +40,8 @@ const MAIN_TAB_ICONS_MAP = {
  */
 const AllInOneClipboardIndicator = GObject.registerClass(
 class AllInOneClipboardIndicator extends PanelMenu.Button {
-        _init(settings, extension, clipboardManager) {
-        super._init(0.5, _("All-in-One Clipboard"), false);
+        constructor(settings, extension, clipboardManager) {
+        super(0.5, _("All-in-One Clipboard"), false);
 
         this._settings = settings;
         this._extension = extension;
@@ -253,7 +254,7 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
             });
 
         } catch (e) {
-            console.error(`AllInOneClipboard: Failed to load tab '${tabName}': ${e.message}\n${e.stack}`);
+            console.error(`[AIO-Clipboard] Failed to load tab '${tabName}': ${e.message}\n${e.stack}`);
             this._setMainTabBarVisibility(true);
 
             if (this._tabContentArea && this._activeTabName === tabName) {
@@ -572,12 +573,10 @@ export default class AllInOneClipboardExtension extends Extension {
         });
         this._settingsSignalIds = [];
 
-        import('./utilities/utilityAutoPaste.js').then(module => {
-            module.cleanup();
-        }).catch(() => {
-            // Ignore
-        });
+        // Stop auto-paste
+        cleanupAutoPaste();
 
+        // Delete GIF cache
         try {
             const gifCacheDir = Gio.File.new_for_path(
                 GLib.build_filenamev([
@@ -590,7 +589,7 @@ export default class AllInOneClipboardExtension extends Extension {
                 gifCacheDir.delete_async(GLib.PRIORITY_DEFAULT, null, null);
             }
         } catch (e) {
-            // Ignore cache deletion errors
+            console.warn('[AIO-Clipboard] Failed to delete GIF cache on disable, ignoring:', e.message);
         }
 
         this._indicator?.destroy();

@@ -15,8 +15,8 @@ class SearchComponent extends GObject.Object {
      * @param {Function} onSearchChangedCallback - A function that will be called
      *   with the new search text whenever it changes.
      */
-    _init(onSearchChangedCallback) {
-        super._init();
+    constructor(onSearchChangedCallback) {
+        super();
         // Use the variable name that was passed in.
         this._onSearchChangedCallback = onSearchChangedCallback;
 

@@ -28,8 +28,8 @@ class MasonryLayout extends St.Widget {
      * @param {Function} params.renderItemFn - Function to render each item.
      *   Signature: (itemData, renderSession) => St.Widget
      */
-    _init(params) {
-        super._init({
+    constructor(params) {
+        super({
             layout_manager: new Clutter.BinLayout(),
             x_expand: true
         });

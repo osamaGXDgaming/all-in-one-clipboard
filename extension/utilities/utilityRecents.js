@@ -24,8 +24,8 @@ export const RecentItemsManager = GObject.registerClass(
          * @param {string} filename - The specific filename for this manager's recents (e.g., 'recent_emojis.json').
          * @param {string} maxItemsSettingKey - The GSettings key for the max items for this type (e.g., 'emoji-recents-max-items').
          */
-        _init(extensionUUID, settings, filename, maxItemsSettingKey) {
-            super._init();
+        constructor(extensionUUID, settings, filename, maxItemsSettingKey) {
+            super();
             this._uuid = extensionUUID;
             this._settings = settings;
             this._recents = [];

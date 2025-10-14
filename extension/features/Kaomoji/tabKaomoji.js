@@ -22,8 +22,8 @@ export const KaomojiTabContent = GObject.registerClass({
     },
 },
 class KaomojiTabContent extends St.Bin {
-    _init(extension, settings) {
-        super._init({
+    constructor(extension, settings) {
+        super({
             style_class: 'kaomoji-tab-content',
             x_expand: true,
             y_expand: true,

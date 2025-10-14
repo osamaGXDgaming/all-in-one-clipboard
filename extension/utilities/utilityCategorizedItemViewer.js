@@ -2,7 +2,6 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
-import Gtk from 'gi://Gtk';
 import St from 'gi://St';
 import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 import { ensureActorVisibleInScrollView } from 'resource:///org/gnome/shell/misc/animationUtils.js';
@@ -51,8 +50,8 @@ class CategorizedItemViewer extends St.BoxLayout {
      * @param {Gio.Settings} settings - The GSettings object for the extension.
      * @param {ViewerConfig} config - The configuration object that defines the component's behavior.
      */
-    _init(extension, settings, config) {
-        super._init({
+    constructor(extension, settings, config) {
+        super({
             vertical: true,
             x_expand: true,
             y_expand: true,
@@ -153,8 +152,8 @@ class CategorizedItemViewer extends St.BoxLayout {
             // Scrolling Tabs
             const scrollView = new St.ScrollView({
                 style_class: 'aio-clipboard-tab-scrollview',
-                hscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
-                vscrollbar_policy: Gtk.PolicyType.NEVER,
+                hscrollbar_policy: St.PolicyType.AUTOMATIC,
+                vscrollbar_policy: St.PolicyType.NEVER,
                 x_expand: false, // Shrink-to-fit is essential
                 overlay_scrollbars: true,
                 clip_to_allocation: true
@@ -543,8 +542,8 @@ class CategorizedItemViewer extends St.BoxLayout {
         let scrollView = new St.ScrollView({
             style_class: 'menu-scrollview',
             overlay_scrollbars: true,
-            hscrollbar_policy: Gtk.PolicyType.NEVER,
-            vscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
+            hscrollbar_policy: St.PolicyType.NEVER,
+            vscrollbar_policy: St.PolicyType.AUTOMATIC,
             x_expand: true,
             y_expand: true
         });

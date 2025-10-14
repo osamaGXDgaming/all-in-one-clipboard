@@ -46,8 +46,8 @@ class GIFTabContent extends St.BoxLayout {
      * @param {object} extension - The extension instance
      * @param {Gio.Settings} settings - Extension settings
      */
-    _init(extension, settings) {
-        super._init({
+    constructor(extension, settings) {
+        super({
             vertical: true,
             style_class: 'gif-tab-content',
             x_expand: true,
@@ -1141,13 +1141,15 @@ class GIFTabContent extends St.BoxLayout {
 
             if (!file.query_exists(null)) {
                 const bytes = await this._fetchImageBytes(url);
-                await file.replace_contents_bytes_async(bytes, null, false, Gio.FileCreateFlags.NONE, null);
+                // Save the bytes to the file
+                await this._saveBytesToFile(file, bytes);
             }
 
             if (this._isDestroyed || renderSession !== this._renderSession) {
                 return;
             }
 
+            // Set the preview image
             const imageActor = new St.Bin({
                 style: `
                     background-image: url("file://${file.get_path()}");
@@ -1163,6 +1165,25 @@ class GIFTabContent extends St.BoxLayout {
         } catch (e) {
             this._handleImageLoadError(bin, e, renderSession);
         }
+    }
+
+    /**
+     * Saves a GLib.Bytes object to a file, wrapping the callback-based
+     * function in a Promise to guarantee completion.
+     * @private
+     */
+    async _saveBytesToFile(file, bytes) {
+        return new Promise((resolve, reject) => {
+            file.replace_contents_bytes_async(bytes, null, false, Gio.FileCreateFlags.NONE, null, (source, res) => {
+                try {
+                    // When this callback runs, the file is guaranteed to be on disk.
+                    source.replace_contents_finish(res);
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        });
     }
 
     /**
