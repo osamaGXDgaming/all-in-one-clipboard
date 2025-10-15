@@ -8,6 +8,7 @@ import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.j
 import { ensureActorVisibleInScrollView } from 'resource:///org/gnome/shell/misc/animationUtils.js';
 
 import { createThemedIcon } from '../../utilities/utilityThemedIcon.js';
+import { getGifCacheManager } from './logic/gifCacheManager.js';
 import { GifManager } from './logic/gifManager.js';
 import { MasonryLayout } from '../../utilities/utilityMasonryLayout.js';
 import { RecentItemsManager } from '../../utilities/utilityRecents.js';
@@ -1143,6 +1144,9 @@ class GIFTabContent extends St.BoxLayout {
                 const bytes = await this._fetchImageBytes(url);
                 // Save the bytes to the file
                 await this._saveBytesToFile(file, bytes);
+
+                // Trigger cache cleanup
+                getGifCacheManager().triggerDebouncedCleanup();
             }
 
             if (this._isDestroyed || renderSession !== this._renderSession) {
@@ -1163,6 +1167,11 @@ class GIFTabContent extends St.BoxLayout {
             bin.set_child(imageActor);
 
         } catch (e) {
+            // Handle errors gracefully
+            if (this._isDestroyed || renderSession !== this._renderSession || !bin.get_stage()) {
+                // If the context has changed, do nothing. The error is irrelevant now.
+                return;
+            }
             this._handleImageLoadError(bin, e, renderSession);
         }
     }

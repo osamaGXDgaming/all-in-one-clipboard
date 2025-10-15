@@ -8,6 +8,7 @@ import St from 'gi://St';
 import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 import { ensureActorVisibleInScrollView } from 'resource:///org/gnome/shell/misc/animationUtils.js';
 
+import { getGifCacheManager } from '../GIF/logic/gifCacheManager.js';
 import { RecentItemsManager } from '../../utilities/utilityRecents.js';
 
 // ============================================================================
@@ -769,6 +770,9 @@ class RecentlyUsedTabContent extends St.BoxLayout {
             if (!file.query_exists(null)) {
                 const bytes = await this._fetchImageBytes(url);
                 await this._saveBytesToFile(file, bytes);
+
+                // Trigger cleanup of old cached GIFs
+                getGifCacheManager().triggerDebouncedCleanup();
             }
 
             if (this._isDestroyed || renderSession !== this._renderSession) {

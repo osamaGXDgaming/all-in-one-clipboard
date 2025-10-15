@@ -1,0 +1,142 @@
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+
+import { createDebouncer } from '../../../utilities/utilityDebouncer.js';
+import { manageCacheSize } from '../../../utilities/utilityCacheManager.js';
+
+let _instance = null;
+
+/**
+ * A singleton manager for the GIF preview cache.
+ * It centralizes the logic for cache path, limits, and cleanup operations,
+ * including a debounced trigger for efficiency.
+ */
+class GifCacheManager {
+    constructor(uuid, settings) {
+        this._uuid = uuid;
+        this._settings = settings;
+        this._gifCacheDir = GLib.build_filenamev([
+            GLib.get_user_cache_dir(),
+            this._uuid,
+            'gif-previews'
+        ]);
+
+        // Create the debounced cleanup function. It will wait 5 seconds
+        // after the last call before executing.
+        this._debouncedCleanup = createDebouncer(() => {
+            this._runCleanup();
+        }, 5000);
+    }
+
+    /**
+     * Executes the cache size management immediately.
+     * Used for startup and preference changes.
+     */
+    runCleanupImmediately() {
+        this._runCleanup();
+    }
+
+    /**
+     * Triggers the debounced cache cleanup.
+     * Used during GIF browsing to batch cleanup operations.
+     */
+    triggerDebouncedCleanup() {
+        this._debouncedCleanup();
+    }
+
+    /**
+     * The core cleanup logic.
+     * @private
+     */
+    _runCleanup() {
+        try {
+            const cacheLimit = this._settings.get_int('gif-cache-limit-mb');
+            manageCacheSize(this._gifCacheDir, cacheLimit)
+                .catch(e => console.warn(`[AIO-Clipboard] GIF cache management failed: ${e.message}`));
+        } catch (e) {
+            console.warn(`[AIO-Clipboard] Could not initiate GIF cache management: ${e.message}`);
+        }
+    }
+
+    /**
+     * Clears the entire GIF cache by deleting all files within the directory.
+     * Used by the "Clear Cache" button in preferences.
+     */
+    clearCache() {
+        try {
+            const dir = Gio.File.new_for_path(this._gifCacheDir);
+            if (!dir.query_exists(null)) {
+                return; // Nothing to clear
+            }
+
+            // Asynchronously list all files in the directory
+            dir.enumerate_children_async(
+                'standard::name',
+                Gio.FileQueryInfoFlags.NONE,
+                GLib.PRIORITY_DEFAULT,
+                null,
+                (source, res) => {
+                    try {
+                        const enumerator = source.enumerate_children_finish(res);
+                        this._deleteFilesInEnumerator(enumerator, dir);
+                    } catch (e) {
+                        console.error(`[AIO-Clipboard] Failed to list files in cache for deletion: ${e.message}`);
+                    }
+                }
+            );
+        } catch (e) {
+            console.error(`[AIO-Clipboard] Failed to access cache directory for clearing: ${e.message}`);
+        }
+    }
+
+    /**
+     * Helper function to recursively delete files from a directory enumerator.
+     * @private
+     */
+    _deleteFilesInEnumerator(enumerator, parentDir) {
+        enumerator.next_files_async(100, GLib.PRIORITY_DEFAULT, null, (source, res) => {
+            try {
+                const files = source.next_files_finish(res);
+                if (files.length === 0) {
+                    // No more files, we are done.
+                    enumerator.close_async(GLib.PRIORITY_DEFAULT, null, null); // Clean up the enumerator
+                    return;
+                }
+
+                // Delete each file found in this batch
+                for (const fileInfo of files) {
+                    const child = parentDir.get_child(fileInfo.get_name());
+                    child.delete_async(GLib.PRIORITY_DEFAULT, null, (sourceDelete, resDelete) => {
+                        try {
+                            sourceDelete.delete_finish(resDelete);
+                        } catch(e) {
+                            // Ignore if a file couldn't be deleted (e.g., already gone)
+                        }
+                    });
+                }
+
+                // Look for the next batch of files
+                this._deleteFilesInEnumerator(enumerator, parentDir);
+
+            } catch(e) {
+                console.error(`[AIO-Clipboard] Error while deleting cache files: ${e.message}`);
+            }
+        });
+    }
+}
+
+/**
+ * Initializes and/or returns the singleton instance of the GifCacheManager.
+ * @param {string} [uuid] - The extension UUID (required for first-time initialization).
+ * @param {Gio.Settings} [settings] - The GSettings object (required for first-time initialization).
+ * @returns {GifCacheManager} The singleton instance.
+ */
+export function getGifCacheManager(uuid, settings) {
+    if (_instance === null) {
+        if (!uuid || !settings) {
+            throw new Error('GifCacheManager must be initialized with uuid and settings.');
+        }
+        _instance = new GifCacheManager(uuid, settings);
+    }
+    return _instance;
+}

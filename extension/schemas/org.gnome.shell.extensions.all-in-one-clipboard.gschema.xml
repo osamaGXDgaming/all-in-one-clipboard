@@ -153,6 +153,12 @@
             <summary>User's Client ID for the Imgur service</summary>
             <description>Required when using Imgur as the GIF provider.</description>
         </key>
+        <key name="gif-cache-limit-mb" type="i">
+            <default>250</default>
+            <range min="0" max="1000"/>
+            <summary>GIF Preview Cache Size Limit (MB)</summary>
+            <description>The maximum size for the GIF preview cache in megabytes. Set to 0 for unlimited cache size.</description>
+        </key>
 
         <!-- Data Management -->
         <key name="clear-recents-trigger" type="s">

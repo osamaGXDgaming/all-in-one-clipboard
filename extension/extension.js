@@ -12,6 +12,7 @@ import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/
 import { cleanupAutoPaste } from './utilities/utilityAutoPaste.js';
 import { ClipboardManager } from './features/Clipboard/logic/clipboardManager.js';
 import { createThemedIcon } from './utilities/utilityThemedIcon.js';
+import { getGifCacheManager } from './features/GIF/logic/gifCacheManager.js';
 import { positionMenu } from './utilities/utilityMenuPositioner.js';
 
 /**
@@ -478,6 +479,8 @@ export default class AllInOneClipboardExtension extends Extension {
             this._clipboardManager.clearHistory();
         } else if (trigger === 'clipboard-pinned' && this._clipboardManager) {
             this._clipboardManager.clearPinned();
+        } else if (trigger === 'gif-cache') {
+            getGifCacheManager().clearCache();
         }
 
         // Reset the trigger back to empty so it can be used again.
@@ -510,6 +513,10 @@ export default class AllInOneClipboardExtension extends Extension {
      */
     async enable() {
         this._settings = this.getSettings();
+
+        // Initialize the singleton cache manager
+        getGifCacheManager(this.uuid, this._settings).runCleanupImmediately();
+
         this._settingsSignalIds = [];
 
         try {
@@ -525,6 +532,7 @@ export default class AllInOneClipboardExtension extends Extension {
             this._clipboardManager.runGarbageCollection();
         }
 
+        // Start auto-paste functionality
         this._indicator = new AllInOneClipboardIndicator(this._settings, this, this._clipboardManager);
         Main.panel.addToStatusArea(this.uuid, this._indicator, 1);
 
@@ -628,22 +636,6 @@ export default class AllInOneClipboardExtension extends Extension {
 
         // Stop auto-paste
         cleanupAutoPaste();
-
-        // Delete GIF cache
-        try {
-            const gifCacheDir = Gio.File.new_for_path(
-                GLib.build_filenamev([
-                    GLib.get_user_cache_dir(),
-                    this.uuid,
-                    'gif-previews'
-                ])
-            );
-            if (gifCacheDir.query_exists(null)) {
-                gifCacheDir.delete_async(GLib.PRIORITY_DEFAULT, null, null);
-            }
-        } catch (e) {
-            console.warn('[AIO-Clipboard] Failed to delete GIF cache on disable, ignoring:', e.message);
-        }
 
         this._indicator?.destroy();
         this._indicator = null;

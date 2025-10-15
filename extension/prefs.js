@@ -1,9 +1,12 @@
 import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+
+import { getGifCacheManager } from './features/GIF/logic/gifCacheManager.js';
 
 export default class AllInOneClipboardPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -450,6 +453,102 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
             tenorRow.set_visible(selectedProvider === 'tenor');
             imgurRow.set_visible(selectedProvider === 'imgur');
         });
+
+        // Cache size limit expander
+        const cacheLimitExpander = new Adw.ExpanderRow({
+            title: _('Limit GIF Preview Cache Size'),
+            subtitle: _('Turn off for an unlimited cache size.'),
+            // This property adds the switch to the row itself.
+            show_enable_switch: true,
+        });
+        group.add(cacheLimitExpander);
+
+        // The SpinRow for setting the actual limit.
+        const cacheLimitRow = new Adw.SpinRow({
+            title: _('Cache Size Limit (MB)'),
+            subtitle: _('Range: 25-1000 MB. Default: 250 MB.'),
+            adjustment: new Gtk.Adjustment({
+                lower: 25,
+                upper: 1000,
+                step_increment: 25,
+            }),
+        });
+        // Add the SpinRow inside the expander
+        cacheLimitExpander.add_row(cacheLimitRow);
+
+        // Flag to prevent recursive updates
+        let isUpdatingFromSettings = false;
+
+        const updateUIFromSettings = () => {
+            isUpdatingFromSettings = true;
+            const limit = settings.get_int('gif-cache-limit-mb');
+
+            // The 'enable_expansion' property controls the built-in switch.
+            cacheLimitExpander.set_enable_expansion(limit > 0);
+
+            // The 'adjustment' property controls the SpinRow.
+            if (limit > 0) {
+                cacheLimitRow.adjustment.set_value(limit);
+            }
+
+            isUpdatingFromSettings = false;
+        };
+
+        // When the user toggles the built-in switch on the expander
+        cacheLimitExpander.connect('notify::enable-expansion', () => {
+            if (isUpdatingFromSettings) return;
+
+            let newLimit;
+            if (cacheLimitExpander.enable_expansion) {
+                // User toggled it on. Use the spinner's current value.
+                newLimit = cacheLimitRow.adjustment.get_value();
+            } else {
+                // User toggled it off. Use 0 for unlimited.
+                newLimit = 0;
+            }
+            settings.set_int('gif-cache-limit-mb', newLimit);
+
+            // Trigger cleanup immediately.
+            const uuid = this.dir.get_parent().get_basename();
+
+            // Initialize the manager if it hasn't been already
+            const gifCacheManager = getGifCacheManager(uuid, settings);
+
+            // Trigger the cleanup immediately
+            gifCacheManager.runCleanupImmediately();
+        });
+
+        // When the user changes the spinner's value...
+        cacheLimitRow.adjustment.connect('value-changed', () => {
+            if (isUpdatingFromSettings) return;
+            // Only update the setting if the main switch is active.
+            if (cacheLimitExpander.enable_expansion) {
+                const newLimit = cacheLimitRow.adjustment.get_value();
+                settings.set_int('gif-cache-limit-mb', newLimit);
+
+                // Use the manager for a consistent, immediate cleanup.
+                const uuid = this.dir.get_parent().get_basename();
+                getGifCacheManager(uuid, settings).runCleanupImmediately();
+            }
+        });
+
+        // The handler for the settings signal triggers the cleanup.
+        const settingsSignalId = settings.connect('changed::gif-cache-limit-mb', () => {
+            // When the setting changes, update the UI.
+            updateUIFromSettings();
+
+            // Trigger cleanup immediately.
+            const uuid = this.dir.get_parent().get_basename();
+            getGifCacheManager(uuid, settings).runCleanupImmediately();
+        });
+
+        // Ensure this UI element is destroyed properly
+        page.connect('unmap', () => {
+            if (settings && settingsSignalId > 0) settings.disconnect(settingsSignalId);
+        });
+
+        // Set the initial UI state from settings.
+        updateUIFromSettings();
     }
 
     _addDataManagementGroup(page, settings, window) {
@@ -533,5 +632,19 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         });
         clearPinnedRow.add_suffix(createClearButton('clipboard-pinned', window));
         clipboardExpander.add_row(clearPinnedRow);
+
+        // Cache expander
+        const cacheExpander = new Adw.ExpanderRow({
+            title: _('Performance Caches'),
+            subtitle: _('Clear temporary data used to improve loading speed.')
+        });
+        group.add(cacheExpander);
+
+        const clearGifCacheRow = new Adw.ActionRow({
+            title: _('GIF Preview Cache'),
+            subtitle: _('Permanently clears all downloaded GIF preview images.')
+        });
+        clearGifCacheRow.add_suffix(createClearButton('gif-cache', window));
+        cacheExpander.add_row(clearGifCacheRow);
     }
 }
