@@ -858,6 +858,5 @@ class ClipboardManager extends GObject.Object {
         if (this._settingsChangedId) {
             this._settings.disconnect(this._settingsChangedId);
         }
-        super.destroy();
     }
 });
