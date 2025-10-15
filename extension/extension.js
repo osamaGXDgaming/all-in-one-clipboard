@@ -49,6 +49,7 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
 
         this._tabButtons = {};
         this._activeTabName = null;
+        this._lastActiveTabName = null;
         this._tabContentArea = null;
         this._currentTabActor = null;
         this._mainTabBar = null;
@@ -56,6 +57,7 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
         this._currentTabVisibilitySignalId = 0;
         this._currentTabNavigateSignalId = 0;
         this._selectTabTimeoutId = 0;
+        this._loadingIndicatorTimeoutId = 0;
 
         this.TAB_NAMES = [
             _("Recently Used"),
@@ -124,9 +126,13 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
         this._mainTabBar.set_reactive(true);
         this._mainTabBar.connect('key-press-event', this._onMainTabBarKeyPress.bind(this));
 
-        if (this.TAB_NAMES.length > 0) {
-            this._selectTab(this.TAB_NAMES[0]);
-        }
+        // Handle menu open/close events
+        this.menu.connect('open-state-changed', (menu, isOpen) => {
+            if (!isOpen) {
+                // When the menu closes, call the reset method on the current tab.
+                this._currentTabActor?.onMenuClosed?.();
+            }
+        });
     }
 
     /**
@@ -164,41 +170,51 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
     }
 
     /**
-     * Selects a tab by name, destroying the old content and loading the new content.
-     * This method handles dynamic importing of tab modules.
+     * Selects and loads the specified tab, updating the UI accordingly.
      * @param {string} tabName - The name of the tab to select.
      * @private
      */
     async _selectTab(tabName) {
+        this._lastActiveTabName = tabName;
         if (this._activeTabName === tabName && this._currentTabActor) {
-            // Tab is already active, just call onTabSelected to restore focus
             this._currentTabActor.onTabSelected?.();
             return;
         }
 
-        this._disconnectTabSignals(this._currentTabActor);
-        this._currentTabActor?.destroy();
-        this._currentTabActor = null;
-        this._tabContentArea.set_child(null);
-
+        const oldActor = this._currentTabActor;
         this._activeTabName = tabName;
         const tabId = getTabIdentifier(tabName);
 
         this._setMainTabBarVisibility(true);
 
+        // Clear any previous loading timeout
+        if (this._loadingIndicatorTimeoutId) {
+            GLib.source_remove(this._loadingIndicatorTimeoutId);
+            this._loadingIndicatorTimeoutId = 0;
+        }
+
         try {
-            let newContentActor;
-
-            const loadingLabel = new St.Label({
-                text: _("Loading %s...").format(tabName),
-                x_align: Clutter.ActorAlign.CENTER,
-                y_align: Clutter.ActorAlign.CENTER,
-                x_expand: true,
-                y_expand: true
+            // Set a timeout to show the "Loading..." indicator only if loading takes too long.
+            this._loadingIndicatorTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 150, () => {
+                if (this._tabContentArea) {
+                    const loadingLabel = new St.Label({
+                        text: _("Loading %s...").format(tabName),
+                        x_align: Clutter.ActorAlign.CENTER,
+                        y_align: Clutter.ActorAlign.CENTER,
+                        x_expand: true,
+                        y_expand: true
+                    });
+                    // Replace the old actor with the loading label
+                    this._tabContentArea.set_child(loadingLabel);
+                    this._currentTabActor = loadingLabel;
+                    oldActor?.destroy();
+                }
+                this._loadingIndicatorTimeoutId = 0;
+                return GLib.SOURCE_REMOVE;
             });
-            this._tabContentArea.set_child(loadingLabel);
 
-
+            // Start loading module
+            let newContentActor;
             if (tabName === _("Recently Used")) {
                 const moduleUrl = `file://${this._extension.path}/features/RecentlyUsed/tabRecentlyUsed.js`;
                 const tabModule = await import(moduleUrl);
@@ -219,6 +235,30 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
                 }
             }
 
+            if (this._activeTabName !== tabName) {
+                newContentActor?.destroy();
+                if (this._loadingIndicatorTimeoutId) {
+                    GLib.source_remove(this._loadingIndicatorTimeoutId);
+                    this._loadingIndicatorTimeoutId = 0;
+                }
+                return;
+            }
+
+            // Loading successful, now update the UI.
+            if (this._loadingIndicatorTimeoutId) {
+                GLib.source_remove(this._loadingIndicatorTimeoutId);
+                this._loadingIndicatorTimeoutId = 0;
+            }
+
+            this._disconnectTabSignals(oldActor);
+            this._tabContentArea.set_child(newContentActor);
+
+            // Use optional chaining for safe destruction. This is cleaner and avoids the error.
+            oldActor?.destroy();
+
+            this._currentTabActor = newContentActor;
+
+            // Connect signals to the new actor
             if (newContentActor.constructor.$gtype) {
                 if (GObject.signal_lookup('set-main-tab-bar-visibility', newContentActor.constructor.$gtype)) {
                     this._currentTabVisibilitySignalId = newContentActor.connect('set-main-tab-bar-visibility', (actor, isVisible) => {
@@ -234,16 +274,6 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
                 }
             }
 
-            if (this._activeTabName !== tabName) {
-                newContentActor?.destroy();
-                return;
-            }
-
-            this._tabContentArea.set_child(newContentActor);
-            this._currentTabActor = newContentActor;
-
-            // Always call onTabSelected after the actor is set as child and ready
-            // Use a small delay to ensure the UI is fully rendered
             if (this._selectTabTimeoutId) {
                 GLib.source_remove(this._selectTabTimeoutId);
             }
@@ -255,6 +285,13 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
 
         } catch (e) {
             console.error(`[AIO-Clipboard] Failed to load tab '${tabName}': ${e.message}\n${e.stack}`);
+
+            if (this._loadingIndicatorTimeoutId) {
+                GLib.source_remove(this._loadingIndicatorTimeoutId);
+                this._loadingIndicatorTimeoutId = 0;
+            }
+
+            oldActor?.destroy();
             this._setMainTabBarVisibility(true);
 
             if (this._tabContentArea && this._activeTabName === tabName) {
@@ -310,31 +347,49 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
     }
 
     /**
-     * Toggles the menu's visibility and intelligently positions it based on context.
-     * This is the primary method called by keyboard shortcuts.
+     * Intelligently selects a tab and then opens the menu.
+     * This proactive approach prevents race conditions and UI flicker.
+     * @param {string | null} tabName - The name of the tab to open. If null, uses default/remembered tab.
      */
-    toggleMenu() {
+    async openMenuAndSelectTab(tabName) {
+        // Decide which tab to show.
+        let targetTab = tabName;
+        if (!targetTab) {
+            const rememberLastTab = this._settings.get_boolean('remember-last-tab');
+            if (rememberLastTab && this._lastActiveTabName) {
+                targetTab = this._lastActiveTabName;
+            } else {
+                targetTab = this.TAB_NAMES[0];
+            }
+        }
+
+        // Select the tab. This begins the content loading process *before* the menu is visible.
+        await this._selectTab(targetTab);
+
+        // Open the menu using the existing positioning logic.
+        if (this.visible) {
+            this.menu.open();
+        } else {
+            this.menu.open(false);
+            GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                if (this.menu.actor) {
+                    positionMenu(this.menu.actor, this._settings);
+                }
+                return GLib.SOURCE_REMOVE;
+            });
+        }
+    }
+
+    /**
+     * Toggles the menu's visibility. Called by the main shortcut.
+     */
+    async toggleMenu() {
         if (this.menu.isOpen) {
             this.menu.close();
             return;
         }
-
-        // If the indicator is visible, open the menu normally, attached to the icon.
-        if (this.visible) {
-            this.menu.open();
-            return;
-        }
-
-        // If the indicator is HIDDEN, open the menu and then position it.
-        this.menu.open(false);
-
-        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            if (this.menu.actor) {
-                // Pass this._settings as the second argument
-                positionMenu(this.menu.actor, this._settings);
-            }
-            return GLib.SOURCE_REMOVE;
-        });
+        // Open the menu, letting the logic decide which tab to show (default or remembered).
+        await this.openMenuAndSelectTab(null);
     }
 
     /**
@@ -342,11 +397,18 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
      * @override
      */
     destroy() {
+        // Clean up any pending timeouts
         if (this._selectTabTimeoutId) {
             GLib.source_remove(this._selectTabTimeoutId);
             this._selectTabTimeoutId = 0;
         }
-        this._disconnectTabSignals(this._currentTabActor);
+        if (this._loadingIndicatorTimeoutId) {
+            GLib.source_remove(this._loadingIndicatorTimeoutId);
+            this._loadingIndicatorTimeoutId = 0;
+        }
+        if (this._currentTabActor) {
+            this._disconnectTabSignals(this._currentTabActor);
+        }
         this._currentTabActor?.destroy();
         this._currentTabActor = null;
 
@@ -370,7 +432,6 @@ export default class AllInOneClipboardExtension extends Extension {
         this._settings = null;
         this._clipboardManager = null;
         this._settingsSignalIds = [];
-        this._shortcutTimeoutId = 0;
     }
 
     /**
@@ -481,14 +542,11 @@ export default class AllInOneClipboardExtension extends Extension {
      * @private
      */
     _bindKeyboardShortcuts() {
-        const ModeType = Shell.hasOwnProperty('ActionMode')
-            ? Shell.ActionMode
-            : Shell.KeyBindingMode;
-
         this._shortcutIds = [];
 
-        this._addKeybinding('shortcut-toggle-main', () => {
-            this._indicator.toggleMenu();
+        // Main toggle shortcut simply calls the toggle method.
+        this._addKeybinding('shortcut-toggle-main', async () => {
+            await this._indicator.toggleMenu();
         });
 
         const tabMap = {
@@ -500,19 +558,14 @@ export default class AllInOneClipboardExtension extends Extension {
         };
 
         Object.entries(tabMap).forEach(([shortcutKey, tabName]) => {
-            this._addKeybinding(shortcutKey, () => {
-                if (!this._indicator.menu.isOpen) {
-                    this._indicator.toggleMenu();
+            this._addKeybinding(shortcutKey, async () => {
+                if (this._indicator.menu.isOpen) {
+                    // If the menu is already open, just switch tabs.
+                    await this._indicator._selectTab(tabName);
+                } else {
+                    // If the menu is closed, open it and select the tab.
+                    await this._indicator.openMenuAndSelectTab(tabName);
                 }
-
-                if (this._shortcutTimeoutId) {
-                    GLib.source_remove(this._shortcutTimeoutId);
-                }
-                this._shortcutTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
-                    this._indicator._selectTab(tabName);
-                    this._shortcutTimeoutId = 0;
-                    return GLib.SOURCE_REMOVE;
-                });
             });
         });
     }
@@ -560,10 +613,6 @@ export default class AllInOneClipboardExtension extends Extension {
      * @override
      */
     disable() {
-        if (this._shortcutTimeoutId) {
-            GLib.source_remove(this._shortcutTimeoutId);
-            this._shortcutTimeoutId = 0;
-        }
         this._unbindKeyboardShortcuts();
 
         this._settingsSignalIds.forEach(id => {

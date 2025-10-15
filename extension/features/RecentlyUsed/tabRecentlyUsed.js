@@ -819,7 +819,14 @@ class RecentlyUsedTabContent extends St.BoxLayout {
      * Called when tab becomes active - show tab bar and render content
      */
     onTabSelected() {
-        this.emit('set-main-tab-bar-visibility', true);
+        // Show the main tab bar
+        GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+            if (!this._isDestroyed) { // A safety check in case the tab is destroyed quickly
+                this.emit('set-main-tab-bar-visibility', true);
+            }
+            return GLib.SOURCE_REMOVE;
+        });
+
         this._renderAll();
         this._restoreFocus();
     }

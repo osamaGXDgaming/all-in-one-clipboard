@@ -850,6 +850,15 @@ class ClipboardTabContent extends St.Bin {
     }
 
     /**
+     * Called by the parent when the main menu is closed.
+     * Resets the tab's state, such as clearing the search field.
+     */
+    onMenuClosed() {
+        // Clear search text and redraw the list without the filter
+        this._searchComponent?.clearSearch();
+    }
+
+    /**
      * Cleanup when the widget is destroyed
      */
     destroy() {

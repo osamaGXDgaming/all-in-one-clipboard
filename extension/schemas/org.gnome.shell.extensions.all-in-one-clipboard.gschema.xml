@@ -7,6 +7,11 @@
             <summary>Hide Panel Icon</summary>
             <description>When enabled, the icon is hidden from the top panel. The extension can still be accessed via keyboard shortcuts.</description>
         </key>
+        <key name="remember-last-tab" type="b">
+            <default>true</default>
+            <summary>Remember Last Opened Tab</summary>
+            <description>When enabled, the menu will re-open to the last viewed tab instead of resetting to the default 'Recently Used' tab.</description>
+        </key>
         <key name="hidden-icon-position-mode" type="s">
             <default>'cursor'</default>
             <summary>Positioning mode when panel icon is hidden</summary>

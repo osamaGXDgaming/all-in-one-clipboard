@@ -38,8 +38,12 @@ class SearchComponent extends GObject.Object {
 
         this._entry.connect('notify::text', () => this._onSearchChanged());
 
-        // Connect to the internal ClutterText's focus signals to maintain visual state
+        // Connect to the internal ClutterText's focus and activate signals
         const clutterText = this._entry.get_clutter_text();
+
+        // Also trigger a search change when the user presses Enter
+        clutterText.connect('activate', () => this._onSearchChanged());
+
         clutterText.connect('key-focus-in', () => {
             this._entry.add_style_pseudo_class('focus');
         });

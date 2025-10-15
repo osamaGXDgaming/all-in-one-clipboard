@@ -299,9 +299,7 @@ class CategorizedItemViewer extends St.BoxLayout {
      * Triggers data loading if necessary and sets initial focus.
      */
     onSelected() {
-        // When the tab is selected (or re-selected), we forcefully tell the
-        // search bar to take focus and show its visual highlight.
-        // The GLib.idle_add ensures this runs after the UI is ready to be drawn.
+        // Focus the search bar when the view is shown.
         GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
             this._searchComponent?.grabFocus();
             return GLib.SOURCE_REMOVE;
@@ -313,6 +311,14 @@ class CategorizedItemViewer extends St.BoxLayout {
                 console.error(`[AIO-Clipboard] Async load from onSelected failed in CategorizedItemViewer: ${e}`);
             });
         }
+    }
+
+    /**
+     * Public method called by the parent when the main menu is closed.
+     * Resets the state of the component, like clearing the search bar.
+     */
+    onMenuClosed() {
+        this._searchComponent?.clearSearch();
     }
 
     /**

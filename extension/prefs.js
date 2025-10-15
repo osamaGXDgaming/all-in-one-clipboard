@@ -44,6 +44,27 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
             Gio.SettingsBindFlags.DEFAULT
         );
 
+        // Remember last opened tab
+        const rememberTabRow = new Adw.SwitchRow({
+            title: _('Remember Last Opened Tab'),
+            subtitle: _('Re-open the menu to the last used tab.'),
+        });
+        group.add(rememberTabRow);
+
+        settings.bind(
+            'remember-last-tab',
+            rememberTabRow, 'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+
+        // Make the "Remember Last Opened Tab" switch sensitive only when the "Hide Panel Icon" switch is off.
+        hideIconRow.bind_property(
+            'active',
+            rememberTabRow,
+            'sensitive',
+            GObject.BindingFlags.SYNC_CREATE | GObject.BindingFlags.INVERT_BOOLEAN
+        );
+
         // Define our options
         const positionOptions = {
             'cursor': _('Mouse Cursor'),
