@@ -53,6 +53,13 @@ class RecentlyUsedTabContent extends St.BoxLayout {
         });
 
         this._httpSession = new Soup.Session();
+
+        this._gifCacheDir = GLib.build_filenamev([
+            GLib.get_user_cache_dir(),
+            extension.uuid,
+            'gif-previews'
+        ]);
+
         this._isDestroyed = false;
         this._extension = extension;
         this._settings = settings;
@@ -683,6 +690,59 @@ class RecentlyUsedTabContent extends St.BoxLayout {
     }
 
     /**
+     * Fetch image bytes from a URL.
+     *
+     * @param {string} url - The image URL
+     * @returns {Promise<GLib.Bytes>} The image bytes
+     * @private
+     */
+    async _fetchImageBytes(url) {
+        const message = new Soup.Message({
+            method: 'GET',
+            uri: GLib.Uri.parse(url, GLib.UriFlags.NONE)
+        });
+
+        return new Promise((resolve, reject) => {
+            this._httpSession.send_and_read_async(
+                message,
+                GLib.PRIORITY_DEFAULT,
+                null,
+                (session, res) => {
+                    if (this._isDestroyed) {
+                        return reject(new Error('Recently Used Tab was destroyed.'));
+                    }
+                    if (message.get_status() >= 300) {
+                        return reject(new Error(`HTTP Error ${message.get_status()}`));
+                    }
+                    try {
+                        resolve(session.send_and_read_finish(res));
+                    } catch (e) {
+                        reject(e);
+                    }
+                }
+            );
+        });
+    }
+
+    /**
+     * Saves a GLib.Bytes object to a file, wrapping the callback-based
+     * function in a Promise to guarantee completion.
+     * @private
+     */
+    async _saveBytesToFile(file, bytes) {
+        return new Promise((resolve, reject) => {
+            file.replace_contents_bytes_async(bytes, null, false, Gio.FileCreateFlags.NONE, null, (source, res) => {
+                try {
+                    source.replace_contents_finish(res);
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        });
+    }
+
+    /**
      * Load and display GIF preview image asynchronously
      *
      * @param {St.Button} button - Button to update with GIF icon
@@ -702,24 +762,26 @@ class RecentlyUsedTabContent extends St.BoxLayout {
         if (!url) return;
 
         try {
-            const message = new Soup.Message({
-                method: 'GET',
-                uri: GLib.Uri.parse(url, GLib.UriFlags.NONE)
-            });
-            const bytes = await this._httpSession.send_and_read_async(
-                message,
-                GLib.PRIORITY_DEFAULT,
-                null
-            );
+            const hash = GLib.compute_checksum_for_string(GLib.ChecksumType.SHA256, url, -1);
+            const filename = `${hash}.gif`;
+            const file = Gio.File.new_for_path(GLib.build_filenamev([this._gifCacheDir, filename]));
 
-            // If the render session has changed, abort updating this icon.
-            if (this._renderSession !== renderSession || this._isDestroyed) {
+            if (!file.query_exists(null)) {
+                const bytes = await this._fetchImageBytes(url);
+                await this._saveBytesToFile(file, bytes);
+            }
+
+            if (this._isDestroyed || renderSession !== this._renderSession) {
                 return;
             }
 
-            icon.set_gicon(new Gio.BytesIcon({ bytes }));
+            // Successfully loaded the GIF, update the icon
+            icon.set_gicon(new Gio.FileIcon({ file }));
+
         } catch (e) {
-            // Silently ignore network errors.
+            if (!e.message.startsWith('Recently Used Tab')) {
+                console.warn(`[AIO-Clipboard] Failed to load recent GIF preview: ${e.message}`);
+            }
         }
     }
 
