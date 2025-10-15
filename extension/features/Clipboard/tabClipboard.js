@@ -133,7 +133,7 @@ class ClipboardTabContent extends St.Bin {
         this._privateModeButton.connect('clicked', () => this._onPrivateModeToggled());
         actionButtonsBox.add_child(this._privateModeButton);
 
-        // Pin Selected button
+        // Pin Selected button (for pinning/unpinning)
         this._pinSelectedButton = new St.Button({
             style_class: 'button clipboard-icon-button',
             can_focus: false,
@@ -143,7 +143,7 @@ class ClipboardTabContent extends St.Bin {
                 icon_size: 16
             })
         });
-        this._pinSelectedButton.tooltip_text = _("Pin Selected");
+        this._pinSelectedButton.tooltip_text = _("Pin/Unpin Selected");
         this._pinSelectedButton.connect('clicked', () => this._onPinSelected());
 
         // Delete Selected button
@@ -404,16 +404,28 @@ class ClipboardTabContent extends St.Bin {
      * Pin all selected items
      */
     async _onPinSelected() {
-        const idsToPin = [...this._selectedIds].filter(id =>
-            this._manager.getHistoryItems().some(item => item.id === id)
-        );
-
-        if (idsToPin.length === 0) {
+        const selectedIds = [...this._selectedIds];
+        if (selectedIds.length === 0) {
             return;
         }
 
-        await Promise.all(idsToPin.map(id => this._manager.pinItem(id)));
-        this._selectedIds.clear();
+        const pinnedItems = this._manager.getPinnedItems();
+        const historyItems = this._manager.getHistoryItems();
+
+        const unpinnedSelected = selectedIds.filter(id =>
+            historyItems.some(item => item.id === id)
+        );
+        const pinnedSelected = selectedIds.filter(id =>
+            pinnedItems.some(item => item.id === id)
+        );
+
+        // Logic: If there are any unpinned items in the selection, the action is to PIN them all.
+        // Otherwise, if the selection only contains pinned items, the action is to UNPIN them all.
+        if (unpinnedSelected.length > 0) {
+            await Promise.all(unpinnedSelected.map(id => this._manager.pinItem(id)));
+        } else if (pinnedSelected.length > 0) {
+            await Promise.all(pinnedSelected.map(id => this._manager.unpinItem(id)));
+        }
     }
 
     /**
@@ -427,6 +439,7 @@ class ClipboardTabContent extends St.Bin {
         }
 
         await Promise.all(idsToDelete.map(id => this._manager.deleteItem(id)));
+        // Deletion is a final action, so we explicitly clear the selection here.
         this._selectedIds.clear();
     }
 
@@ -513,6 +526,24 @@ class ClipboardTabContent extends St.Bin {
         this._extension._indicator.menu.close();
     }
 
+    /**
+     * Handles the click event for a row's pin button when the item is unpinned.
+     * @param {object} itemData - The data for the specific item to pin.
+     * @private
+     */
+    _onPinItemClicked(itemData) {
+        this._manager.pinItem(itemData.id);
+    }
+
+    /**
+     * Handles the click event for a row's star button when the item is pinned.
+     * @param {object} itemData - The data for the specific item to unpin.
+     * @private
+     */
+    _onUnpinItemClicked(itemData) {
+        this._manager.unpinItem(itemData.id);
+    }
+
     // ===========================
     // UI State Methods
     // ===========================
@@ -552,6 +583,40 @@ class ClipboardTabContent extends St.Bin {
         } else {
             this._selectAllIcon.icon_name = 'checkbox-mixed-symbolic';
             this._selectAllButton.tooltip_text = _("Select All");
+        }
+
+        // Update the pin button's appearance based on the selection context
+        this._updatePinButtonState();
+    }
+
+    /**
+     * Updates the pin button's icon and tooltip based on the current selection.
+     * - If any selected item is unpinned, the action is to "Pin".
+     * - If all selected items are already pinned, the action is to "Unpin".
+     */
+    _updatePinButtonState() {
+        // The icon for the action button should always be the generic 'pin' icon.
+        this._pinSelectedButton.child.icon_name = 'view-pin-symbolic';
+
+        if (this._selectedIds.size === 0) {
+            this._pinSelectedButton.tooltip_text = _("Pin/Unpin Selected");
+            return;
+        }
+
+        const selectedIds = [...this._selectedIds];
+        const historyItems = this._manager.getHistoryItems();
+
+        // Check if any of the selected items are in the unpinned history list.
+        const hasUnpinnedSelection = selectedIds.some(id =>
+            historyItems.some(item => item.id === id)
+        );
+
+        if (hasUnpinnedSelection) {
+            // If there's at least one unpinned item, the next action is to pin.
+            this._pinSelectedButton.tooltip_text = _("Pin Selected");
+        } else {
+            // Otherwise, all selected items must be pinned, so the action is to unpin.
+            this._pinSelectedButton.tooltip_text = _("Unpin Selected");
         }
     }
 
@@ -676,11 +741,11 @@ class ClipboardTabContent extends St.Bin {
     }
 
     /**
-     * Create a UI widget for a clipboard item
+     * Create a UI widget for a clipboard item.
      *
-     * @param {Object} itemData - The clipboard item data
-     * @param {boolean} isPinned - Whether the item is pinned
-     * @returns {St.Button} The row button widget
+     * @param {Object} itemData - The clipboard item data.
+     * @param {boolean} isPinned - Whether the item is pinned.
+     * @returns {St.Button} The row button widget.
      */
     _createItemWidget(itemData, isPinned) {
         // Main row button (clickable area for copying)
@@ -714,14 +779,8 @@ class ClipboardTabContent extends St.Bin {
             y_expand: false,
             y_align: Clutter.ActorAlign.CENTER
         });
-
         itemCheckbox.connect('clicked', () => {
-            // Remove focus pseudo-class from row button
-            if (rowButton.has_key_focus()) {
-                rowButton.remove_style_pseudo_class('focus');
-            }
-
-            // Toggle selection
+            if (rowButton.has_key_focus()) rowButton.remove_style_pseudo_class('focus');
             if (this._selectedIds.has(itemData.id)) {
                 this._selectedIds.delete(itemData.id);
                 checkboxIcon.icon_name = 'checkbox-unchecked-symbolic';
@@ -729,10 +788,8 @@ class ClipboardTabContent extends St.Bin {
                 this._selectedIds.add(itemData.id);
                 checkboxIcon.icon_name = 'checkbox-checked-symbolic';
             }
-
             this._updateSelectionState();
         });
-
         mainBox.add_child(itemCheckbox);
 
         // Content widget (text or image)
@@ -747,14 +804,9 @@ class ClipboardTabContent extends St.Bin {
             contentWidget.get_clutter_text().set_line_wrap(false);
             contentWidget.get_clutter_text().set_ellipsize(Pango.EllipsizeMode.END);
         } else {
-            const imagePath = GLib.build_filenamev([
-                this._manager._imagesDir,
-                itemData.image_filename
-            ]);
-            const file = Gio.File.new_for_path(imagePath);
-
+            const imagePath = GLib.build_filenamev([this._manager._imagesDir, itemData.image_filename]);
             contentWidget = new St.Icon({
-                gicon: new Gio.FileIcon({ file }),
+                gicon: new Gio.FileIcon({ file: Gio.File.new_for_path(imagePath) }),
                 icon_size: 36,
                 style_class: 'clipboard-item-image-icon',
                 x_expand: true
@@ -762,75 +814,54 @@ class ClipboardTabContent extends St.Bin {
         }
         mainBox.add_child(contentWidget);
 
-        // Pin button
-        const pinIcon = new St.Icon({
-            icon_name: isPinned ? 'starred-symbolic' : 'non-starred-symbolic',
-            icon_size: 16
-        });
-
-        const pinButton = new St.Button({
+        // This button shows the STARRED STATE of the item in the row.
+        const rowStarButton = new St.Button({
             style_class: 'button clipboard-icon-button',
-            child: pinIcon,
+            child: new St.Icon({ icon_size: 16 }),
             can_focus: true,
             y_expand: false,
             y_align: Clutter.ActorAlign.CENTER
         });
 
-        pinButton.connect('clicked', () => {
-            if (isPinned) {
-                this._manager.unpinItem(itemData.id);
-            } else {
-                this._manager.pinItem(itemData.id);
-            }
-        });
+        if (isPinned) {
+            rowStarButton.child.icon_name = 'starred-symbolic';
+            rowStarButton.connect('clicked', () => this._onUnpinItemClicked(itemData));
+        } else {
+            rowStarButton.child.icon_name = 'non-starred-symbolic';
+            rowStarButton.connect('clicked', () => this._onPinItemClicked(itemData));
+        }
 
         // Delete button
-        const deleteIcon = new St.Icon({
-            icon_name: 'edit-delete-symbolic',
-            icon_size: 16
-        });
-
         const deleteButton = new St.Button({
             style_class: 'button clipboard-icon-button',
-            child: deleteIcon,
+            child: new St.Icon({ icon_name: 'edit-delete-symbolic', icon_size: 16 }),
             can_focus: true,
             y_expand: false,
             y_align: Clutter.ActorAlign.CENTER
         });
-
-        deleteButton.connect('clicked', () => {
-            this._manager.deleteItem(itemData.id);
-        });
+        deleteButton.connect('clicked', () => this._manager.deleteItem(itemData.id));
 
         // Buttons container
-        const buttonsBox = new St.BoxLayout({
-            x_align: Clutter.ActorAlign.END
-        });
+        const buttonsBox = new St.BoxLayout({ x_align: Clutter.ActorAlign.END });
         buttonsBox.spacing = 4;
-        buttonsBox.add_child(pinButton);
+        buttonsBox.add_child(rowStarButton);
         buttonsBox.add_child(deleteButton);
         mainBox.add_child(buttonsBox);
 
         // Register all focusable buttons for keyboard navigation
-        const rowItems = [itemCheckbox, rowButton, pinButton, deleteButton];
+        const rowItems = [itemCheckbox, rowButton, rowStarButton, deleteButton];
         this._gridAllButtons.push(...rowItems);
 
         // Setup focus styling for all buttons in the row
         for (const item of rowItems) {
             item.connect('key-focus-in', () => {
-                if (this._currentlyFocusedRow) {
-                    this._currentlyFocusedRow.remove_style_class_name('focused');
-                }
+                if (this._currentlyFocusedRow) this._currentlyFocusedRow.remove_style_class_name('focused');
                 rowButton.add_style_class_name('focused');
                 this._currentlyFocusedRow = rowButton;
                 ensureActorVisibleInScrollView(this._scrollView, rowButton);
             });
-
-            item.connect('key-focus-out', () => {
-                rowButton.remove_style_class_name('focused');
-            });
+            item.connect('key-focus-out', () => rowButton.remove_style_class_name('focused'));
         }
-
         return rowButton;
     }
 
