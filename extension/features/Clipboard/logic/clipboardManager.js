@@ -709,6 +709,52 @@ class ClipboardManager extends GObject.Object {
     }
 
     // ===========================
+    // List Manipulation Methods
+    // ===========================
+
+    /**
+     * Deletes all items from the history.
+     */
+    clearHistory() {
+        if (!this._initialLoadSuccess) return;
+
+        // Delete associated files first to prevent orphans
+        this._history.forEach(item => {
+            if (item.type === 'image') {
+                this._deleteImageFile(item.image_filename);
+            }
+            if (item.type === 'text' && item.has_full_content) {
+                this._deleteTextFile(item.id);
+            }
+        });
+
+        this._history = [];
+        this._saveHistory();
+        this.emit('history-changed');
+    }
+
+    /**
+     * Deletes all items from the pinned list.
+     */
+    clearPinned() {
+        if (!this._initialLoadSuccess) return;
+
+        // Delete associated files first to prevent orphans
+        this._pinned.forEach(item => {
+            if (item.type === 'image') {
+                this._deleteImageFile(item.image_filename);
+            }
+            if (item.type === 'text' && item.has_full_content) {
+                this._deleteTextFile(item.id);
+            }
+        });
+
+        this._pinned = [];
+        this._savePinned();
+        this.emit('pinned-list-changed');
+    }
+
+    // ===========================
     // File Management Methods
     // ===========================
 

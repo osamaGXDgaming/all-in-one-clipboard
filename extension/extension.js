@@ -474,9 +474,13 @@ export default class AllInOneClipboardExtension extends Extension {
         } else if (RECENT_FILES_MAP[trigger]) {
             // Delete a specific recent file
             this._deleteRecentFile(RECENT_FILES_MAP[trigger]);
+        } else if (trigger === 'clipboard-history' && this._clipboardManager) {
+            this._clipboardManager.clearHistory();
+        } else if (trigger === 'clipboard-pinned' && this._clipboardManager) {
+            this._clipboardManager.clearPinned();
         }
 
-        // IMPORTANT: Reset the trigger back to empty so it can be used again.
+        // Reset the trigger back to empty so it can be used again.
         this._settings.set_string('clear-recents-trigger', '');
     }
 

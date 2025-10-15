@@ -455,65 +455,83 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
     _addDataManagementGroup(page, settings, window) {
         const group = new Adw.PreferencesGroup({
             title: _('Data Management'),
-            description: _('Permanently delete cached recent items. This action cannot be undone.')
+            description: _('Expand a section to clear stored data. These actions cannot be undone.')
         });
         page.add(group);
 
-        // Helper function to create a clear button with a confirmation dialog
+        // Helper to create a clear button with confirmation dialog
         const createClearButton = (triggerValue, parentWindow) => {
             const button = new Gtk.Button({
                 label: _('Clear'),
                 valign: Gtk.Align.CENTER,
             });
             button.add_css_class('destructive-action');
-
             button.connect('clicked', () => {
                 const dialog = new Adw.MessageDialog({
                     heading: _('Are you sure?'),
-                    body: _('The selected recent items history will be permanently deleted.'),
+                    body: _('The selected data will be permanently deleted.'),
                     transient_for: parentWindow,
                     modal: true,
                 });
-
                 dialog.add_response('cancel', _('Cancel'));
                 dialog.add_response('clear', _('Clear'));
                 dialog.set_response_appearance('clear', Adw.ResponseAppearance.DESTRUCTIVE);
                 dialog.set_default_response('cancel');
                 dialog.set_close_response('cancel');
-
                 dialog.connect('response', (self, response) => {
                     if (response === 'clear') {
-                        // Set the trigger key to signal the main extension
                         settings.set_string('clear-recents-trigger', triggerValue);
                     }
                 });
-
                 dialog.present();
             });
-
             return button;
         };
 
-        // Define the rows for each recent type
+        // Recent items expander
+        const recentsExpander = new Adw.ExpanderRow({
+            title: _('Recent Item History'),
+            subtitle: _('Clear lists of recently used emojis, GIFs, etc.')
+        });
+        group.add(recentsExpander);
+
         const recentTypes = [
-            { key: 'emoji', title: _('Recent Emojis') },
-            { key: 'gif', title: _('Recent GIFs') },
-            { key: 'kaomoji', title: _('Recent Kaomojis') },
-            { key: 'symbols', title: _('Recent Symbols') },
+            { key: 'emoji', title: _('Recent Emojis'), subtitle: _('Permanently clears the list of recent emojis.') },
+            { key: 'gif', title: _('Recent GIFs'), subtitle: _('Permanently clears the list of recent GIFs.') },
+            { key: 'kaomoji', title: _('Recent Kaomojis'), subtitle: _('Permanently clears the list of recent kaomojis.') },
+            { key: 'symbols', title: _('Recent Symbols'), subtitle: _('Permanently clears the list of recent symbols.') },
         ];
-
         recentTypes.forEach(type => {
-            const row = new Adw.ActionRow({ title: type.title });
+            const row = new Adw.ActionRow({ title: type.title, subtitle: type.subtitle });
             row.add_suffix(createClearButton(type.key, window));
-            group.add(row);
+            recentsExpander.add_row(row);
         });
-
-        // Add the "Clear All" row
-        const clearAllRow = new Adw.ActionRow({
+        const clearAllRecentsRow = new Adw.ActionRow({
             title: _('All Recent Items'),
-            subtitle: _('Clears all of the above recent items lists at once.')
+            subtitle: _('Permanently clears all of the above lists at once.')
         });
-        clearAllRow.add_suffix(createClearButton('all', window));
-        group.add(clearAllRow);
+        clearAllRecentsRow.add_suffix(createClearButton('all', window));
+        recentsExpander.add_row(clearAllRecentsRow);
+
+        // Clipboard data expander
+        const clipboardExpander = new Adw.ExpanderRow({
+            title: _('Clipboard Data'),
+            subtitle: _('Permanently delete your saved clipboard history and pinned items.')
+        });
+        group.add(clipboardExpander);
+
+        const clearClipboardHistoryRow = new Adw.ActionRow({
+            title: _('Clipboard History'),
+            subtitle: _('Permanently clears all saved unpinned clipboard items.')
+        });
+        clearClipboardHistoryRow.add_suffix(createClearButton('clipboard-history', window));
+        clipboardExpander.add_row(clearClipboardHistoryRow);
+
+        const clearPinnedRow = new Adw.ActionRow({
+            title: _('Pinned Items'),
+            subtitle: _('Permanently clears all saved pinned clipboard items.')
+        });
+        clearPinnedRow.add_suffix(createClearButton('clipboard-pinned', window));
+        clipboardExpander.add_row(clearPinnedRow);
     }
 }
