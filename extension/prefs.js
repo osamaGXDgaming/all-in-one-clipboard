@@ -213,10 +213,13 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         });
         page.add(group);
 
+        // Get the default value from the GSettings schema.
+        const historyDefault = settings.get_default_value('clipboard-history-max-items').get_int32();
+
         // Max clipboard items
         const maxItemsRow = new Adw.SpinRow({
             title: _('Maximum Clipboard History'),
-            subtitle: _('Number of items to keep in history (10-200).'),
+            subtitle: _('Number of items to keep in history (10-200). Default: %d.').format(historyDefault),
             adjustment: new Gtk.Adjustment({ lower: 10, upper: 200, step_increment: 5 }),
         });
         group.add(maxItemsRow);
@@ -266,9 +269,12 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         ];
 
         items.forEach(item => {
+            // Get the default value for the specific key in this iteration.
+            const defaultValue = settings.get_default_value(item.key).get_int32();
+
             const row = new Adw.SpinRow({
                 title: item.title,
-                subtitle: _('Range: 5-100'),
+                subtitle: _('Range: 5-100. Default: %d.').format(defaultValue),
                 adjustment: new Gtk.Adjustment({ lower: 5, upper: 100, step_increment: 1 }),
             });
             group.add(row);
@@ -279,19 +285,26 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
     _addAutoPasteGroup(page, settings) {
         const group = new Adw.PreferencesGroup({
             title: _('Auto-Paste Settings'),
-            description: _('Automatically paste selected items instead of just copying to clipboard.')
         });
         page.add(group);
 
-        // Master toggle
-        const masterRow = new Adw.SwitchRow({
+        // Create a single ExpanderRow with a built-in switch.
+        const autoPasteExpander = new Adw.ExpanderRow({
             title: _('Enable Auto-Paste'),
-            subtitle: _('Master toggle for auto-paste functionality.'),
+            subtitle: _('Automatically paste selected items instead of just copying to clipboard.'),
+            show_enable_switch: true,
         });
-        group.add(masterRow);
-        settings.bind('enable-auto-paste', masterRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        group.add(autoPasteExpander);
 
-        // Feature-specific toggles
+        // Bind the expander's switch to the master GSettings key.
+        settings.bind(
+            'enable-auto-paste',
+            autoPasteExpander,
+            'enable-expansion', // This property controls the built-in switch
+            Gio.SettingsBindFlags.DEFAULT
+        );
+
+        // Define the individual toggles that will go inside the expander.
         const features = [
             { key: 'auto-paste-emoji', title: _('Auto-Paste Emojis') },
             { key: 'auto-paste-gif', title: _('Auto-Paste GIFs') },
@@ -300,15 +313,14 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
             { key: 'auto-paste-clipboard', title: _('Auto-Paste from Clipboard History') }
         ];
 
+        // Create and add each individual SwitchRow inside the expander.
         features.forEach(feature => {
             const row = new Adw.SwitchRow({
                 title: feature.title,
+                // Initially sensitive only if the master switch is on.
             });
-            group.add(row);
+            autoPasteExpander.add_row(row);
             settings.bind(feature.key, row, 'active', Gio.SettingsBindFlags.DEFAULT);
-
-            // Bind sensitivity to master toggle
-            masterRow.bind_property('active', row, 'sensitive', GObject.BindingFlags.SYNC_CREATE);
         });
     }
 
@@ -463,10 +475,14 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         });
         group.add(cacheLimitExpander);
 
+        // Get the default value dynamically from the GSettings schema.
+        const cacheDefault = settings.get_default_value('gif-cache-limit-mb').get_int32();
+
         // The SpinRow for setting the actual limit.
         const cacheLimitRow = new Adw.SpinRow({
             title: _('Cache Size Limit (MB)'),
-            subtitle: _('Range: 25-1000 MB. Default: 250 MB.'),
+            // Use the fetched default value in the formatted subtitle string.
+            subtitle: _('Range: 25-1000 MB. Default: %d MB.').format(cacheDefault),
             adjustment: new Gtk.Adjustment({
                 lower: 25,
                 upper: 1000,
