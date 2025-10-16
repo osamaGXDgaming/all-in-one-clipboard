@@ -54,6 +54,7 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
         this._tabContentArea = null;
         this._currentTabActor = null;
         this._mainTabBar = null;
+        this._explicitTabTarget = null;
 
         this._currentTabVisibilitySignalId = 0;
         this._currentTabNavigateSignalId = 0;
@@ -129,8 +130,33 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
 
         // Handle menu open/close events
         this.menu.connect('open-state-changed', (menu, isOpen) => {
-            if (!isOpen) {
-                // When the menu closes, call the reset method on the current tab.
+            if (isOpen) {
+                let targetTab;
+
+                // If a specific tab was requested, use it.
+                if (this._explicitTabTarget) {
+                    // A shortcut requested a specific tab. Obey the request.
+                    targetTab = this._explicitTabTarget;
+                    this._explicitTabTarget = null; // Reset the flag immediately after using it.
+                } else {
+                    // No specific tab was requested, so apply the default/remembered logic.
+                    const rememberLastTab = this._settings.get_boolean('remember-last-tab');
+                    if (rememberLastTab && this._lastActiveTabName) {
+                        targetTab = this._lastActiveTabName;
+                    } else {
+                        targetTab = this.TAB_NAMES[0];
+                    }
+                }
+
+                // Select the target tab after the menu is opened
+                GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                    if (this.menu.isOpen) {
+                        this._selectTab(targetTab);
+                    }
+                    return GLib.SOURCE_REMOVE;
+                });
+
+            } else {
                 this._currentTabActor?.onMenuClosed?.();
             }
         });
@@ -348,49 +374,52 @@ class AllInOneClipboardIndicator extends PanelMenu.Button {
     }
 
     /**
-     * Intelligently selects a tab and then opens the menu.
-     * This proactive approach prevents race conditions and UI flicker.
-     * @param {string | null} tabName - The name of the tab to open. If null, uses default/remembered tab.
+     * Opens the menu, respecting the positioning settings for a hidden icon.
+     * The 'open-state-changed' signal handler will manage which tab to display.
      */
-    async openMenuAndSelectTab(tabName) {
-        // Decide which tab to show.
-        let targetTab = tabName;
-        if (!targetTab) {
-            const rememberLastTab = this._settings.get_boolean('remember-last-tab');
-            if (rememberLastTab && this._lastActiveTabName) {
-                targetTab = this._lastActiveTabName;
-            } else {
-                targetTab = this.TAB_NAMES[0];
-            }
+    openMenu() {
+        if (this.menu.isOpen) {
+            return;
         }
 
-        // Select the tab. This begins the content loading process *before* the menu is visible.
-        await this._selectTab(targetTab);
-
-        // Open the menu using the existing positioning logic.
-        if (this.visible) {
-            this.menu.open();
-        } else {
-            this.menu.open(false);
+        // If the menu is hidden, open it manually and position it.
+        if (!this.visible) {
+            this.menu.open(false); // Open without animation for manual positioning
             GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
                 if (this.menu.actor) {
                     positionMenu(this.menu.actor, this._settings);
                 }
                 return GLib.SOURCE_REMOVE;
             });
+        } else {
+            this.menu.open();
         }
     }
 
     /**
-     * Toggles the menu's visibility. Called by the main shortcut.
+     * Toggles the menu's visibility. Called by the main toggle shortcut and mouse clicks.
+     * This is a general open, so we do not set a specific tab target.
      */
-    async toggleMenu() {
+    toggleMenu() {
         if (this.menu.isOpen) {
             this.menu.close();
-            return;
+        } else {
+            // Reset the target tab when opening the menu generally.
+            this._explicitTabTarget = null;
+            this.openMenu();
         }
-        // Open the menu, letting the logic decide which tab to show (default or remembered).
-        await this.openMenuAndSelectTab(null);
+    }
+
+    /**
+     * Opens the menu and ensures a specific tab is selected.
+     * Used by the specific-tab keyboard shortcuts.
+     * @param {string} tabName - The name of the tab to open.
+     */
+    async openMenuAndSelectTab(tabName) {
+        // We set the target BEFORE opening the menu.
+        // The _selectTab call now happens inside the 'open-state-changed' handler.
+        this._explicitTabTarget = tabName;
+        this.openMenu();
     }
 
     /**
@@ -470,11 +499,11 @@ export default class AllInOneClipboardExtension extends Extension {
         if (trigger === 'all') {
             // Delete all known recent files
             for (const filename of Object.values(RECENT_FILES_MAP)) {
-                this._deleteRecentFile(filename);
+                this._clearRecentFile(filename);
             }
         } else if (RECENT_FILES_MAP[trigger]) {
             // Delete a specific recent file
-            this._deleteRecentFile(RECENT_FILES_MAP[trigger]);
+            this._clearRecentFile(RECENT_FILES_MAP[trigger]);
         } else if (trigger === 'clipboard-history' && this._clipboardManager) {
             this._clipboardManager.clearHistory();
         } else if (trigger === 'clipboard-pinned' && this._clipboardManager) {
@@ -488,21 +517,41 @@ export default class AllInOneClipboardExtension extends Extension {
     }
 
     /**
-     * Deletes a specified recent items cache file.
-     * @param {string} filename - The name of the file to delete (e.g., 'recent_emojis.json').
+     * Clears a specified recent items file by overwriting it with an empty array.
+     * This avoids race conditions that can occur with file deletion.
+     * @param {string} filename - The name of the file to clear.
      * @private
      */
-    _deleteRecentFile(filename) {
+    _clearRecentFile(filename) {
         try {
             const cacheDir = GLib.build_filenamev([GLib.get_user_cache_dir(), this.uuid]);
             const filePath = GLib.build_filenamev([cacheDir, filename]);
             const file = Gio.File.new_for_path(filePath);
 
-            // Asynchronously delete the file, we don't need to wait for it to complete.
-            // A null callback is used for fire-and-forget deletion.
-            file.delete_async(GLib.PRIORITY_DEFAULT, null, null);
+            const emptyContent = new GLib.Bytes(new TextEncoder().encode('[]'));
+
+            // Asynchronously replace the file's contents. This is a fire-and-forget operation.
+            file.replace_contents_bytes_async(
+                emptyContent,
+                null, // etag
+                false, // make_backup
+                Gio.FileCreateFlags.REPLACE_DESTINATION | Gio.FileCreateFlags.PRIVATE,
+                null, // cancellable
+                (source, res) => {
+                    try {
+                        // Finalize the async operation.
+                        source.replace_contents_finish(res);
+                    } catch (e) {
+                        // Safely ignore NOT_FOUND errors, as the desired state is the same.
+                        if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND)) {
+                            console.warn(`[AIO-Clipboard] Could not clear recent file '${filename}': ${e.message}`);
+                        }
+                    }
+                }
+            );
         } catch (e) {
-            console.error(`[AIO-Clipboard] Failed to delete recent file '${filename}': ${e.message}`);
+            // Handles synchronous errors like invalid paths.
+            console.error(`[AIO-Clipboard] Failed to initiate clearing of recent file '${filename}': ${e.message}`);
         }
     }
 
