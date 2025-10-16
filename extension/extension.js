@@ -577,6 +577,30 @@ export default class AllInOneClipboardExtension extends Extension {
 
         const isLoadSuccessful = await this._clipboardManager.loadAndPrepare();
 
+        // Clear data at login if the setting is enabled
+        if (this._settings.get_boolean('clear-data-at-login')) {
+            // Clear Clipboard History if enabled
+            if (this._settings.get_boolean('clear-clipboard-history-at-login')) {
+                this._clipboardManager.clearHistory();
+            }
+
+            // Define and clear all other recent item types if enabled
+            const recentsToClear = [
+                { setting: 'clear-recent-emojis-at-login', file: 'recent_emojis.json' },
+                { setting: 'clear-recent-gifs-at-login', file: 'recent_gifs.json' },
+                { setting: 'clear-recent-kaomojis-at-login', file: 'recent_kaomojis.json' },
+                { setting: 'clear-recent-symbols-at-login', file: 'recent_symbols.json' },
+            ];
+
+            for (const item of recentsToClear) {
+                if (this._settings.get_boolean(item.setting)) {
+                    // Clear the recent items file
+                    this._clearRecentFile(item.file);
+                }
+            }
+        }
+
+        // Run garbage collection if the clipboard data loaded successfully
         if (isLoadSuccessful) {
             this._clipboardManager.runGarbageCollection();
         }

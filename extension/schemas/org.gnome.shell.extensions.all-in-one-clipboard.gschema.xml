@@ -160,6 +160,38 @@
             <description>The maximum size for the GIF preview cache in megabytes. Set to 0 for unlimited cache size.</description>
         </key>
 
+        <!-- Automatic Data Management -->
+        <key name="clear-data-at-login" type="b">
+            <default>false</default>
+            <summary>Enable Clearing Data at Login</summary>
+            <description>Master switch to enable the automatic clearing of history data when GNOME Shell starts.</description>
+        </key>
+        <key name="clear-clipboard-history-at-login" type="b">
+            <default>true</default>
+            <summary>Clear Clipboard History at Login</summary>
+            <description>When the master switch is enabled, this will clear the clipboard history at login.</description>
+        </key>
+        <key name="clear-recent-emojis-at-login" type="b">
+            <default>true</default>
+            <summary>Clear Recent Emojis at Login</summary>
+            <description>When the master switch is enabled, this will clear the recent emojis list at login.</description>
+        </key>
+        <key name="clear-recent-gifs-at-login" type="b">
+            <default>true</default>
+            <summary>Clear Recent GIFs at Login</summary>
+            <description>When the master switch is enabled, this will clear the recent GIFs list at login.</description>
+        </key>
+        <key name="clear-recent-kaomojis-at-login" type="b">
+            <default>true</default>
+            <summary>Clear Recent Kaomojis at Login</summary>
+            <description>When the master switch is enabled, this will clear the recent kaomojis list at login.</description>
+        </key>
+        <key name="clear-recent-symbols-at-login" type="b">
+            <default>true</default>
+            <summary>Clear Recent Symbols at Login</summary>
+            <description>When the master switch is enabled, this will clear the recent symbols list at login.</description>
+        </key>
+
         <!-- Data Management -->
         <key name="clear-recents-trigger" type="s">
             <default>''</default>

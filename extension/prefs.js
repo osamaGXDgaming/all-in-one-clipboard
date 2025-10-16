@@ -554,9 +554,41 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
     _addDataManagementGroup(page, settings, window) {
         const group = new Adw.PreferencesGroup({
             title: _('Data Management'),
-            description: _('Expand a section to clear stored data. These actions cannot be undone.')
+            description: _('Manage stored data and configure automatic cleanup. Manual actions cannot be undone.')
         });
         page.add(group);
+
+        // Clear at login expander
+        const clearOnStartupExpander = new Adw.ExpanderRow({
+            title: _('Clear Data at Login'),
+            subtitle: _('Automatically clear selected data at every login'),
+            show_enable_switch: true,
+        });
+        group.add(clearOnStartupExpander);
+
+        // Bind the expander's switch to the master GSettings key
+        settings.bind(
+            'clear-data-at-login',
+            clearOnStartupExpander,
+            'enable-expansion', // This property controls the built-in switch
+            Gio.SettingsBindFlags.DEFAULT
+        );
+
+        // Define the individual toggles that will go inside the expander
+        const loginClearToggles = [
+            { key: 'clear-clipboard-history-at-login', title: _('Clear Clipboard History') },
+            { key: 'clear-recent-emojis-at-login', title: _('Clear Recent Emojis') },
+            { key: 'clear-recent-gifs-at-login', title: _('Clear Recent GIFs') },
+            { key: 'clear-recent-kaomojis-at-login', title: _('Clear Recent Kaomojis') },
+            { key: 'clear-recent-symbols-at-login', title: _('Clear Recent Symbols') },
+        ];
+
+        // Create and add each individual SwitchRow to the expander
+        loginClearToggles.forEach(toggle => {
+            const row = new Adw.SwitchRow({ title: toggle.title });
+            clearOnStartupExpander.add_row(row);
+            settings.bind(toggle.key, row, 'active', Gio.SettingsBindFlags.DEFAULT);
+        });
 
         // Helper to create a clear button with confirmation dialog
         const createClearButton = (triggerValue, parentWindow) => {
