@@ -1,7 +1,6 @@
 import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
-import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -9,6 +8,11 @@ import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/
 import { getGifCacheManager } from './features/GIF/logic/gifCacheManager.js';
 
 export default class AllInOneClipboardPreferences extends ExtensionPreferences {
+    /**
+     * Populate the preferences window with the settings UI.
+     *
+     * @param {Adw.PreferencesWindow} window - The preferences window to populate.
+     */
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
 
@@ -29,12 +33,44 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         this._addDataManagementGroup(page, settings, window);
     }
 
+    /**
+     * Helper to extract the min and max range from a GSettings schema key.
+     *
+     * @param {Gio.Settings} settings - The Gio.Settings instance.
+     * @param {string} key - The key to extract the range for.
+     * @returns {Object|null} An object with 'min' and 'max' properties, or null if not a range.
+     */
+    _getRangeFromSchema(settings, key) {
+        const schemaSource = settings.settings_schema;
+        const schemaKey = schemaSource.get_key(key);
+        const rangeVariant = schemaKey.get_range();
+
+        // The range variant has format: ('range', <(min, max)>)
+        const rangeType = rangeVariant.get_child_value(0).get_string()[0];
+
+        if (rangeType === 'range') {
+            const limits = rangeVariant.get_child_value(1).get_child_value(0);
+            const min = limits.get_child_value(0).get_int32();
+            const max = limits.get_child_value(1).get_int32();
+            return { min, max };
+        }
+
+        return null;
+    }
+
+    /**
+     * Add the "General" preferences group to the page.
+     *
+     * @param {Adw.PreferencesPage} page - The preferences page to add the group to.
+     * @param {Gio.Settings} settings - The Gio.Settings instance.
+     */
     _addGeneralGroup(page, settings) {
         const group = new Adw.PreferencesGroup({
             title: _('General'),
         });
         page.add(group);
 
+        // Hide panel icon
         const hideIconRow = new Adw.SwitchRow({
             title: _('Hide Panel Icon'),
             subtitle: _('The menu can still be opened with shortcuts.'),
@@ -120,6 +156,11 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         );
     }
 
+    /**
+     * Add the "Keyboard Shortcuts" preferences group to the page.
+     * @param {Adw.PreferencesPage} page - The preferences page to add the group to.
+     * @param {Gio.Settings} settings - The Gio.Settings instance.
+     */
     _addKeyboardShortcutsGroup(page, settings) {
         const group = new Adw.PreferencesGroup({
             title: _('Keyboard Shortcuts'),
@@ -142,6 +183,14 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         });
     }
 
+    /**
+     * Create a row for a keyboard shortcut setting.
+     *
+     * @param {Gio.Settings} settings - The Gio.Settings instance.
+     * @param {string} key - The GSettings key for the shortcut.
+     * @param {string} title - The title to display for the shortcut.
+     * @returns {Adw.ActionRow} The created action row.
+     */
     _createShortcutRow(settings, key, title) {
         const row = new Adw.ActionRow({
             title: title,
@@ -196,38 +245,48 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
                     shortcutLabel.set_accelerator(shortcut);
                     dialog.close();
                 }
-
                 return Gdk.EVENT_STOP;
             });
 
             dialog.add_controller(controller);
             dialog.present();
         });
-
         return row;
     }
 
+    /**
+     * Add the "Clipboard History" preferences group to the page.
+     *
+     * @param {Adw.PreferencesPage} page - The preferences page to add the group to.
+     * @param {Gio.Settings} settings - The Gio.Settings instance.
+     */
     _addClipboardHistoryGroup(page, settings) {
         const group = new Adw.PreferencesGroup({
             title: _('Clipboard History'),
         });
         page.add(group);
 
-        // Get the default value from the GSettings schema.
-        const historyDefault = settings.get_default_value('clipboard-history-max-items').get_int32();
+        // Get the default value dynamically from the GSettings schema.
+        const key = 'clipboard-history-max-items';
+        const historyDefault = settings.get_default_value(key).get_int32();
+        const historyRange = this._getRangeFromSchema(settings, key);
+        const HISTORY_INCREMENT_NUMBER = 5;
 
-        // Max clipboard items
         const maxItemsRow = new Adw.SpinRow({
             title: _('Maximum Clipboard History'),
-            subtitle: _('Number of items to keep in history (10-200). Default: %d.').format(historyDefault),
-            adjustment: new Gtk.Adjustment({ lower: 10, upper: 200, step_increment: 5 }),
+            subtitle: _('Number of items to keep in history (%d-%d). Default: %d.').format(
+                historyRange.min,
+                historyRange.max,
+                historyDefault
+            ),
+            adjustment: new Gtk.Adjustment({
+                lower: historyRange.min,
+                upper: historyRange.max,
+                step_increment: HISTORY_INCREMENT_NUMBER
+            }),
         });
         group.add(maxItemsRow);
-        settings.bind(
-            'clipboard-history-max-items',
-            maxItemsRow.adjustment, 'value',
-            Gio.SettingsBindFlags.DEFAULT
-        );
+        settings.bind(key, maxItemsRow.adjustment, 'value', Gio.SettingsBindFlags.DEFAULT);
 
         // Move to top on copy
         const updateRecencyRow = new Adw.SwitchRow({
@@ -254,6 +313,12 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         );
     }
 
+    /**
+     * Add the "Recent Items" preferences group to the page.
+     *
+     * @param {Adw.PreferencesPage} page - The preferences page to add the group to.
+     * @param {Gio.Settings} settings - The Gio.Settings instance.
+     */
     _addRecentItemsGroup(page, settings) {
         const group = new Adw.PreferencesGroup({
             title: _('Recent Items Limits'),
@@ -269,19 +334,34 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         ];
 
         items.forEach(item => {
-            // Get the default value for the specific key in this iteration.
-            const defaultValue = settings.get_default_value(item.key).get_int32();
+            // Get the default value dynamically from the GSettings schema.
+            const recentDefault = settings.get_default_value(item.key).get_int32();
+            const recentRange = this._getRangeFromSchema(settings, item.key);
+            const RECENT_INCREMENT_NUMBER = 1;
 
             const row = new Adw.SpinRow({
                 title: item.title,
-                subtitle: _('Range: 5-100. Default: %d.').format(defaultValue),
-                adjustment: new Gtk.Adjustment({ lower: 5, upper: 100, step_increment: 1 }),
+                subtitle: _('Range: %d-%d. Default: %d.').format(
+                    recentRange.min,
+                    recentRange.max,
+                    recentDefault
+                ),
+                adjustment: new Gtk.Adjustment({
+                    lower: recentRange.min,
+                    upper: recentRange.max,
+                    step_increment: RECENT_INCREMENT_NUMBER
+                }),
             });
             group.add(row);
             settings.bind(item.key, row.adjustment, 'value', Gio.SettingsBindFlags.DEFAULT);
         });
     }
 
+    /**
+     * Add the "Auto-Paste" preferences group to the page.
+     * @param {Adw.PreferencesPage} page - The preferences page to add the group to.
+     * @param {Gio.Settings} settings - The Gio.Settings instance.
+     */
     _addAutoPasteGroup(page, settings) {
         const group = new Adw.PreferencesGroup({
             title: _('Auto-Paste Settings'),
@@ -324,6 +404,12 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         });
     }
 
+    /**
+     * Add the "Emoji Settings" preferences group to the page.
+     *
+     * @param {Adw.PreferencesPage} page - The preferences page to add the group to.
+     * @param {Gio.Settings} settings - The Gio.Settings instance.
+     */
     _addEmojiSettingsGroup(page, settings) {
         const group = new Adw.PreferencesGroup({
             title: _('Emoji Settings'),
@@ -386,6 +472,13 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         );
     }
 
+    /**
+     * Bind a ComboRow to a GSettings key.
+     * @param {Gio.Settings} settings - The Gio.Settings instance.
+     * @param {Adw.ComboRow} comboRow - The ComboRow to bind.
+     * @param {string} settingKey - The GSettings key to bind.
+     * @param {Array} skinTones - An array of skin tone objects.
+     */
     _bindSkinToneComboRow(settings, comboRow, settingKey, skinTones) {
         const currentValue = settings.get_string(settingKey);
         const currentIndex = skinTones.findIndex(t => t.value === currentValue);
@@ -407,6 +500,12 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         });
     }
 
+    /**
+     * Add the "GIF Settings" preferences group to the page.
+     *
+     * @param {Adw.PreferencesPage} page - The preferences page to add the group to.
+     * @param {Gio.Settings} settings - The Gio.Settings instance.
+     */
     _addGifSettingsGroup(page, settings) {
         const group = new Adw.PreferencesGroup({
             title: _('GIF Settings'),
@@ -476,17 +575,23 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         group.add(cacheLimitExpander);
 
         // Get the default value dynamically from the GSettings schema.
-        const cacheDefault = settings.get_default_value('gif-cache-limit-mb').get_int32();
+        const cacheKey = 'gif-cache-limit-mb';
+        const cacheDefault = settings.get_default_value(cacheKey).get_int32();
+        const cacheRange = this._getRangeFromSchema(settings, cacheKey);
+        const CACHE_MINIMUM_NUMBER = 25;
+        const CACHE_INCREMENT_NUMBER = 25;
 
-        // The SpinRow for setting the actual limit.
         const cacheLimitRow = new Adw.SpinRow({
             title: _('Cache Size Limit (MB)'),
-            // Use the fetched default value in the formatted subtitle string.
-            subtitle: _('Range: 25-1000 MB. Default: %d MB.').format(cacheDefault),
+            subtitle: _('Range: %d-%d MB. Default: %d MB.').format(
+                CACHE_MINIMUM_NUMBER,
+                cacheRange.max,
+                cacheDefault
+            ),
             adjustment: new Gtk.Adjustment({
-                lower: 25,
-                upper: 1000,
-                step_increment: 25,
+                lower: CACHE_MINIMUM_NUMBER,
+                upper: cacheRange.max,
+                step_increment: CACHE_INCREMENT_NUMBER,
             }),
         });
         // Add the SpinRow inside the expander
@@ -567,6 +672,12 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
         updateUIFromSettings();
     }
 
+    /**
+     * Add the "Data Management" preferences group to the page.
+     * @param {Adw.PreferencesPage} page - The preferences page to add the group to.
+     * @param {Gio.Settings} settings - The Gio.Settings instance.
+     * @param {Adw.PreferencesWindow} window - The preferences window (for dialogs).
+     */
     _addDataManagementGroup(page, settings, window) {
         const group = new Adw.PreferencesGroup({
             title: _('Data Management'),
@@ -608,6 +719,7 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
 
         // Helper to create a clear button with confirmation dialog
         const createClearButton = (triggerValue, parentWindow) => {
+            // Create the clear button
             const button = new Gtk.Button({
                 label: _('Clear'),
                 valign: Gtk.Align.CENTER,
