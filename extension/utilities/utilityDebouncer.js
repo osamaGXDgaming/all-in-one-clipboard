@@ -1,42 +1,49 @@
 import GLib from 'gi://GLib';
 
 /**
- * Creates a debounced function that delays invoking the provided function
- * until after `wait` milliseconds have elapsed since the last time the
- * debounced function was invoked.
- *
- * @param {Function} func The function to debounce.
- * @param {number} wait The number of milliseconds to delay.
- * @returns {Function & {destroy: Function}} Returns the new debounced function,
- * which also has a `destroy` method to cancel any pending timeouts.
+ * A class that creates a debounced function. It delays invoking the function
+ * until after `wait` milliseconds have elapsed since the last time `call()`
+ * was invoked.
  */
-export function createDebouncer(func, wait) {
-    let timeoutId = 0;
+export class Debouncer {
+    /**
+     * @param {Function} func The function to debounce.
+     * @param {number} wait The number of milliseconds to delay.
+     */
+    constructor(func, wait) {
+        this._func = func;
+        this._wait = wait;
+        this._timeoutId = 0;
+    }
 
-    const debouncedFunction = function(...args) {
+    /**
+     * Triggers the debounced function. Each call will reset the waiting period.
+     * @param {...any} args - Arguments to pass to the original function.
+     */
+    call(...args) {
         // If there's an existing timeout, clear it.
-        if (timeoutId > 0) {
-            GLib.source_remove(timeoutId);
+        if (this._timeoutId > 0) {
+            GLib.source_remove(this._timeoutId);
         }
 
         // Set a new timeout.
-        timeoutId = GLib.timeout_add(GLib.PRIORITY_LOW, wait, () => {
+        this._timeoutId = GLib.timeout_add(GLib.PRIORITY_LOW, this._wait, () => {
             // When the timeout fires, execute the original function.
-            func.apply(this, args);
-            timeoutId = 0; // Clear the ID
+            this._func.apply(this, args);
+            this._timeoutId = 0; // Clear the ID
             return GLib.SOURCE_REMOVE;
         });
-    };
+    }
 
     /**
      * Cancels any pending timeout, preventing the debounced function from executing.
      * This must be called when the object that uses the debouncer is destroyed.
      */
-    debouncedFunction.destroy = function() {
-        if (timeoutId > 0) {
-            GLib.source_remove(timeoutId);
-            timeoutId = 0;
+    destroy() {
+        if (this._timeoutId > 0) {
+            GLib.source_remove(this._timeoutId);
+            this._timeoutId = 0;
         }
-    };
-    return debouncedFunction;
+        this._func = null; // Clear reference to the function
+    }
 }

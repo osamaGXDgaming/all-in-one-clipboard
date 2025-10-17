@@ -1,7 +1,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import { createDebouncer } from '../../../utilities/utilityDebouncer.js';
+import { Debouncer } from '../../../utilities/utilityDebouncer.js';
 import { manageCacheSize } from '../../../utilities/utilityCacheManager.js';
 
 let _instance = null;
@@ -21,9 +21,8 @@ class GifCacheManager {
             'gif-previews'
         ]);
 
-        // Create the debounced cleanup function. It will wait 5 seconds
-        // after the last call before executing.
-        this._debouncedCleanup = createDebouncer(() => {
+        // Instantiate the Debouncer class.
+        this._debouncedCleanup = new Debouncer(() => {
             this._runCleanup();
         }, 5000);
     }
@@ -41,7 +40,7 @@ class GifCacheManager {
      * Used during GIF browsing to batch cleanup operations.
      */
     triggerDebouncedCleanup() {
-        this._debouncedCleanup();
+        this._debouncedCleanup.call();
     }
 
     /**
