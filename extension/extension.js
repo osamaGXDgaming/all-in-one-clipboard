@@ -12,7 +12,7 @@ import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/
 import { cleanupAutoPaste } from './utilities/utilityAutoPaste.js';
 import { ClipboardManager } from './features/Clipboard/logic/clipboardManager.js';
 import { createThemedIcon } from './utilities/utilityThemedIcon.js';
-import { getGifCacheManager } from './features/GIF/logic/gifCacheManager.js';
+import { getGifCacheManager, destroyGifCacheManager } from './features/GIF/logic/gifCacheManager.js';
 import { positionMenu } from './utilities/utilityMenuPositioner.js';
 
 /**
@@ -709,6 +709,9 @@ export default class AllInOneClipboardExtension extends Extension {
 
         // Stop auto-paste
         cleanupAutoPaste();
+
+        // Destroy the GIF cache manager, which will cancel any pending timeouts.
+        destroyGifCacheManager();
 
         this._indicator?.destroy();
         this._indicator = null;

@@ -90,6 +90,17 @@ class GifCacheManager {
     }
 
     /**
+     * Cleans up resources, including canceling any pending debounced cleanup.
+     */
+    destroy() {
+        if (this._debouncedCleanup) {
+            this._debouncedCleanup.destroy();
+            this._debouncedCleanup = null;
+        }
+        this._settings = null;
+    }
+
+    /**
      * Helper function to recursively delete files from a directory enumerator.
      * @private
      */
@@ -139,4 +150,14 @@ export function getGifCacheManager(uuid, settings) {
         _instance = new GifCacheManager(uuid, settings);
     }
     return _instance;
+}
+
+/**
+ * Destroys the singleton instance of the GifCacheManager, cleaning up its resources.
+ */
+export function destroyGifCacheManager() {
+    if (_instance !== null) {
+        _instance.destroy();
+        _instance = null;
+    }
 }

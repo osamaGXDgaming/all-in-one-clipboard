@@ -7,12 +7,13 @@ import GLib from 'gi://GLib';
  *
  * @param {Function} func The function to debounce.
  * @param {number} wait The number of milliseconds to delay.
- * @returns {Function} Returns the new debounced function.
+ * @returns {Function & {destroy: Function}} Returns the new debounced function,
+ * which also has a `destroy` method to cancel any pending timeouts.
  */
 export function createDebouncer(func, wait) {
     let timeoutId = 0;
 
-    return function(...args) {
+    const debouncedFunction = function(...args) {
         // If there's an existing timeout, clear it.
         if (timeoutId > 0) {
             GLib.source_remove(timeoutId);
@@ -26,4 +27,16 @@ export function createDebouncer(func, wait) {
             return GLib.SOURCE_REMOVE;
         });
     };
+
+    /**
+     * Cancels any pending timeout, preventing the debounced function from executing.
+     * This must be called when the object that uses the debouncer is destroyed.
+     */
+    debouncedFunction.destroy = function() {
+        if (timeoutId > 0) {
+            GLib.source_remove(timeoutId);
+            timeoutId = 0;
+        }
+    };
+    return debouncedFunction;
 }
