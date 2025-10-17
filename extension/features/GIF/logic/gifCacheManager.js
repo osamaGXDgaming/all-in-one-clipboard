@@ -22,7 +22,7 @@ class GifCacheManager {
         ]);
 
         // Instantiate the Debouncer class.
-        this._debouncedCleanup = new Debouncer(() => {
+        this._debouncer = new Debouncer(() => {
             this._runCleanup();
         }, 5000);
     }
@@ -40,7 +40,7 @@ class GifCacheManager {
      * Used during GIF browsing to batch cleanup operations.
      */
     triggerDebouncedCleanup() {
-        this._debouncedCleanup.call();
+        this._debouncer.trigger();
     }
 
     /**
@@ -92,9 +92,9 @@ class GifCacheManager {
      * Cleans up resources, including canceling any pending debounced cleanup.
      */
     destroy() {
-        if (this._debouncedCleanup) {
-            this._debouncedCleanup.destroy();
-            this._debouncedCleanup = null;
+        if (this._debouncer) {
+            this._debouncer.destroy();
+            this._debouncer = null;
         }
         this._settings = null;
     }

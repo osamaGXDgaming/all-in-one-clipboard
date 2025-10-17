@@ -20,7 +20,7 @@ export class Debouncer {
      * Triggers the debounced function. Each call will reset the waiting period.
      * @param {...any} args - Arguments to pass to the original function.
      */
-    call(...args) {
+    trigger(...args) {
         // If there's an existing timeout, clear it.
         if (this._timeoutId > 0) {
             GLib.source_remove(this._timeoutId);

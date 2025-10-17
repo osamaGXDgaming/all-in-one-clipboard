@@ -8,6 +8,7 @@ import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.j
 import { ensureActorVisibleInScrollView } from 'resource:///org/gnome/shell/misc/animationUtils.js';
 
 import { SearchComponent } from '../../utilities/utilitySearch.js';
+import { AutoPaster, getAutoPaster } from '../../utilities/utilityAutoPaste.js';
 
 /**
  * Number of focusable UI elements per clipboard item row
@@ -512,10 +513,9 @@ class ClipboardTabContent extends St.Bin {
 
         if (copySuccess) {
             // Check if auto-paste is enabled
-            const { shouldAutoPaste, triggerPaste } = await import('../../utilities/utilityAutoPaste.js');
-            if (shouldAutoPaste(this._settings, 'auto-paste-clipboard')) {
+            if (AutoPaster.shouldAutoPaste(this._settings, 'auto-paste-clipboard')) {
                 this._manager.setDebounce(); // Extra debounce for clipboard
-                await triggerPaste();
+                await getAutoPaster().trigger();
             }
 
             // Tell the manager to handle the item's state (recency/pinning).

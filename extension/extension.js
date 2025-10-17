@@ -9,11 +9,11 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import { cleanupAutoPaste } from './utilities/utilityAutoPaste.js';
 import { ClipboardManager } from './features/Clipboard/logic/clipboardManager.js';
 import { createThemedIcon } from './utilities/utilityThemedIcon.js';
-import { getGifCacheManager, destroyGifCacheManager } from './features/GIF/logic/gifCacheManager.js';
 import { positionMenu } from './utilities/utilityMenuPositioner.js';
+import { getAutoPaster, destroyAutoPaster } from './utilities/utilityAutoPaste.js';
+import { getGifCacheManager, destroyGifCacheManager } from './features/GIF/logic/gifCacheManager.js';
 
 /**
  * Creates a simple, predictable identifier from a tab name.
@@ -563,8 +563,9 @@ export default class AllInOneClipboardExtension extends Extension {
     async enable() {
         this._settings = this.getSettings();
 
-        // Initialize the singleton cache manager
+        // Initialize singleton managers
         getGifCacheManager(this.uuid, this._settings).runCleanupImmediately();
+        getAutoPaster();
 
         this._settingsSignalIds = [];
 
@@ -707,10 +708,8 @@ export default class AllInOneClipboardExtension extends Extension {
         });
         this._settingsSignalIds = [];
 
-        // Stop auto-paste
-        cleanupAutoPaste();
-
-        // Destroy the GIF cache manager, which will cancel any pending timeouts.
+        // Destroy singleton managers
+        destroyAutoPaster();
         destroyGifCacheManager();
 
         this._indicator?.destroy();

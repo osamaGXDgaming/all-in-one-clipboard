@@ -5,6 +5,7 @@ import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.j
 
 import { CategorizedItemViewer } from '../../utilities/utilityCategorizedItemViewer.js';
 import { KaomojiJsonParser } from './parsers/kaomojiJsonParser.js';
+import { AutoPaster, getAutoPaster } from '../../utilities/utilityAutoPaste.js';
 
 /**
  * A content widget for the "Kaomoji" tab.
@@ -85,9 +86,8 @@ class KaomojiTabContent extends St.Bin {
             St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, charToCopy);
 
             // Check if auto-paste is enabled
-            const { shouldAutoPaste, triggerPaste } = await import('../../utilities/utilityAutoPaste.js');
-            if (shouldAutoPaste(this._settings, 'auto-paste-kaomoji')) {
-                await triggerPaste();
+            if (AutoPaster.shouldAutoPaste(this._settings, 'auto-paste-kaomoji')) {
+                await getAutoPaster().trigger();
             }
 
             extension._indicator.menu?.close();

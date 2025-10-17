@@ -10,6 +10,7 @@ import { ensureActorVisibleInScrollView } from 'resource:///org/gnome/shell/misc
 
 import { getGifCacheManager } from '../GIF/logic/gifCacheManager.js';
 import { RecentItemsManager } from '../../utilities/utilityRecents.js';
+import { AutoPaster, getAutoPaster } from '../../utilities/utilityAutoPaste.js';
 
 // ============================================================================
 // Constants
@@ -681,9 +682,9 @@ class RecentlyUsedTabContent extends St.BoxLayout {
                 this._clipboardManager.promoteItemToTop(itemData.id);
             }
 
-            const { shouldAutoPaste, triggerPaste } = await import('../../utilities/utilityAutoPaste.js');
-            if (shouldAutoPaste(this._settings, featureKeyMap[feature])) {
-                await triggerPaste();
+            // Check if auto-paste is enabled
+            if (AutoPaster.shouldAutoPaste(this._settings, featureKeyMap[feature])) {
+                await getAutoPaster().trigger();
             }
         }
 

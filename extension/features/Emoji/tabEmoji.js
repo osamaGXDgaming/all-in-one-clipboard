@@ -9,6 +9,7 @@ import { CategorizedItemViewer } from '../../utilities/utilityCategorizedItemVie
 import { createThemedIcon } from '../../utilities/utilityThemedIcon.js';
 import { EmojiJsonParser } from './parsers/emojiJsonParser.js';
 import { EmojiModifier } from './logic/emojiModifier.js';
+import { AutoPaster, getAutoPaster } from '../../utilities/utilityAutoPaste.js';
 
 // GSettings keys for skin tone preferences.
 const ENABLE_CUSTOM_SKIN_TONES_KEY = 'enable-custom-skin-tones';
@@ -147,9 +148,8 @@ class EmojiTabContent extends St.Bin {
         St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, charToCopy);
 
         // Check if auto-paste is enabled
-        const { shouldAutoPaste, triggerPaste } = await import('../../utilities/utilityAutoPaste.js');
-        if (shouldAutoPaste(this._settings, 'auto-paste-emoji')) {
-            await triggerPaste();
+        if (AutoPaster.shouldAutoPaste(this._settings, 'auto-paste-emoji')) {
+            await getAutoPaster().trigger();
         }
 
         extension._indicator.menu?.close();
