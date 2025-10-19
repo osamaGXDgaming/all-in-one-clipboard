@@ -107,6 +107,19 @@ The easiest way to install is from the official GNOME Extensions website.
     ./uninstall.sh
     ```
 
+## 🌐 Localization
+
+All-in-One Clipboard is available in multiple languages thanks to the efforts of contributors from around the world.
+
+**Supported Languages:**
+*   English
+
+### Want to Help Translate?
+
+We would love your help to make this extension available in your language! Contributions are welcome from everyone.
+
+To get started, please read our **[Translation Guide](CONTRIBUTING.md#translating-the-extension)**.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to open an issue to report a bug or suggest a feature, or submit a pull request with your improvements.

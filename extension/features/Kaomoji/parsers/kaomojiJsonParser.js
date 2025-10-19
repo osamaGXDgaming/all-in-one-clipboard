@@ -1,6 +1,11 @@
+import { dgettext } from 'gettext';
+
+const DATA_DOMAIN = 'all-in-one-clipboard-content';
+
 /**
  * Parses the nested `kaomojis.json` format into a flat list of
  * standardized kaomoji objects that the application can easily use.
+ * Applies localization to category names and keywords.
  */
 export class KaomojiJsonParser {
     /**
@@ -31,7 +36,7 @@ export class KaomojiJsonParser {
                  continue;
             }
 
-            const greaterCategoryName = greaterCategoryEntry.name.trim();
+            const greaterCategoryName = dgettext(DATA_DOMAIN, greaterCategoryEntry.name.trim());
 
             for (const innerCategoryEntry of greaterCategoryEntry.categories) {
                 // Validate the structure of each sub-category object.
@@ -39,7 +44,7 @@ export class KaomojiJsonParser {
                     continue;
                 }
 
-                const innerCategoryName = innerCategoryEntry.name.trim();
+                const innerCategoryName = dgettext(DATA_DOMAIN, innerCategoryEntry.name.trim());
 
                 for (const emoticon of innerCategoryEntry.emoticons) {
                     // Validate the emoticon entry.

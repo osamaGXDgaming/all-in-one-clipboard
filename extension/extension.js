@@ -5,6 +5,7 @@ import GObject from 'gi://GObject';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
+import * as Gettext from 'gettext';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -561,6 +562,11 @@ export default class AllInOneClipboardExtension extends Extension {
      * @async
      */
     async enable() {
+        // Initialize translations
+        this.initTranslations('all-in-one-clipboard');
+        Gettext.bindtextdomain('all-in-one-clipboard-content', this.dir.get_child('locale').get_path());
+
+        // Load settings
         this._settings = this.getSettings();
 
         // Initialize singleton managers

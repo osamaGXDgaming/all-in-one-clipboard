@@ -39,6 +39,29 @@ class GifManager extends GObject.Object {
     }
 
     // ===========================
+    // Private Helper Methods
+    // ===========================
+
+    /**
+     * Gets the user's primary locale in the format APIs expect (e.g., 'en_US').
+     * @private
+     * @returns {string|null} The locale string or null if not found.
+     */
+    _getUserLocale() {
+        const languages = GLib.get_language_names();
+        if (languages && languages.length > 0) {
+            // GLib returns something like "en_US.UTF-8" but we want "en_US"
+            // We'll replace the hyphen and ensure the region is uppercase.
+            const parts = languages[0].replace('-', '_').split('_');
+            if (parts.length === 2) {
+                return `${parts[0].toLowerCase()}_${parts[1].toUpperCase()}`;
+            }
+            return languages[0]; // Fallback to whatever GLib gave us
+        }
+        return null;
+    }
+
+    // ===========================
     // Public API Methods
     // ===========================
 
@@ -120,7 +143,12 @@ class GifManager extends GObject.Object {
             throw new GifManagerError('Missing Tenor API Key.');
         }
 
-        const url = `https://tenor.googleapis.com/v2/categories?key=${apiKey}&client_key=all-in-one-clipboard-gnome-shell`;
+        // Fetch categories
+        const locale = this._getUserLocale();
+        let url = `https://tenor.googleapis.com/v2/categories?key=${apiKey}&client_key=all-in-one-clipboard-gnome-shell`;
+        if (locale) {
+            url += `&locale=${locale}`;
+        }
         const responseJson = await this._makeApiRequest(url);
 
         // Standardize the response format
@@ -145,6 +173,7 @@ class GifManager extends GObject.Object {
             throw new GifManagerError('Missing Imgur Client ID.');
         }
 
+        // Fetch topics
         const url = `https://api.imgur.com/3/topics/defaults`;
         const headers = { 'Authorization': `Client-ID ${clientId}` };
         const responseJson = await this._makeApiRequest(url, headers);
@@ -182,11 +211,18 @@ class GifManager extends GObject.Object {
         const limit = '20';
         let url;
 
+        const locale = this._getUserLocale();
+
         if (isTrending) {
             url = `https://tenor.googleapis.com/v2/featured?key=${apiKey}&client_key=${clientKey}&limit=${limit}`;
         } else {
             const encodedQuery = query.trim().replace(/\s+/g, '+');
             url = `https://tenor.googleapis.com/v2/search?q=${encodedQuery}&key=${apiKey}&client_key=${clientKey}&limit=${limit}`;
+        }
+
+        // Add locale if available
+        if (locale) {
+            url += `&locale=${locale}`;
         }
 
         // Add pagination position if it exists

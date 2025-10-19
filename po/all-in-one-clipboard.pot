@@ -1,0 +1,618 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-19 03:46+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: extension/extension.js:46
+msgid "All-in-One Clipboard"
+msgstr ""
+
+#: extension/extension.js:66 extension/extension.js:246
+#: extension/features/Emoji/tabEmoji.js:108
+#: extension/features/GIF/tabGIF.js:143
+#: extension/features/Kaomoji/tabKaomoji.js:66
+#: extension/features/Symbols/tabSymbols.js:66
+msgid "Recently Used"
+msgstr ""
+
+#: extension/extension.js:67 extension/extension.js:646
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:163
+msgid "Emoji"
+msgstr ""
+
+#: extension/extension.js:68 extension/extension.js:647
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:164
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:581
+msgid "GIF"
+msgstr ""
+
+#: extension/extension.js:69 extension/extension.js:648
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:165
+msgid "Kaomoji"
+msgstr ""
+
+#: extension/extension.js:70 extension/extension.js:649
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:166
+msgid "Symbols"
+msgstr ""
+
+#: extension/extension.js:71 extension/extension.js:259
+#: extension/extension.js:645
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:162
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:167
+msgid "Clipboard"
+msgstr ""
+
+#: extension/extension.js:229
+#, javascript-format
+msgid "Loading %s..."
+msgstr ""
+
+#: extension/prefs.js:25
+msgid "All-in-One Clipboard Settings"
+msgstr ""
+
+#: extension/prefs.js:73
+msgid "General"
+msgstr ""
+
+#: extension/prefs.js:79
+msgid "Hide Panel Icon"
+msgstr ""
+
+#: extension/prefs.js:80
+msgid "The menu can still be opened with shortcuts."
+msgstr ""
+
+#: extension/prefs.js:92
+msgid "Remember Last Opened Tab"
+msgstr ""
+
+#: extension/prefs.js:93
+msgid "Re-open the menu to the last used tab."
+msgstr ""
+
+#: extension/prefs.js:113
+msgid "Mouse Cursor"
+msgstr ""
+
+#: extension/prefs.js:114
+msgid "Screen Center"
+msgstr ""
+
+#: extension/prefs.js:115
+msgid "Active Window"
+msgstr ""
+
+#: extension/prefs.js:121
+msgid "Menu Position"
+msgstr ""
+
+#: extension/prefs.js:170
+msgid "Keyboard Shortcuts"
+msgstr ""
+
+#: extension/prefs.js:171
+msgid "Click on a shortcut to change it. Press Backspace to clear."
+msgstr ""
+
+#: extension/prefs.js:176
+msgid "Toggle Main Menu"
+msgstr ""
+
+#: extension/prefs.js:177
+msgid "Open Clipboard Tab"
+msgstr ""
+
+#: extension/prefs.js:178
+msgid "Open Emoji Tab"
+msgstr ""
+
+#: extension/prefs.js:179
+msgid "Open GIF Tab"
+msgstr ""
+
+#: extension/prefs.js:180
+msgid "Open Kaomoji Tab"
+msgstr ""
+
+#: extension/prefs.js:181
+msgid "Open Symbols Tab"
+msgstr ""
+
+#: extension/prefs.js:204 extension/prefs.js:206 extension/prefs.js:207
+#: extension/prefs.js:525
+msgid "Disabled"
+msgstr ""
+
+#: extension/prefs.js:214
+msgid "Set Shortcut"
+msgstr ""
+
+#: extension/prefs.js:221
+msgid "Press a key combination or Escape to cancel"
+msgstr ""
+
+#: extension/prefs.js:269 extension/prefs.js:787
+msgid "Clipboard History"
+msgstr ""
+
+#: extension/prefs.js:280
+msgid "Maximum Clipboard History"
+msgstr ""
+
+#: extension/prefs.js:281
+#, javascript-format
+msgid "Number of items to keep in history (%d-%d). Default: %d."
+msgstr ""
+
+#: extension/prefs.js:297
+msgid "Move Item to Top on Copy"
+msgstr ""
+
+#: extension/prefs.js:298
+msgid "When copying an item from history, make it the most recent."
+msgstr ""
+
+#: extension/prefs.js:309
+msgid "Unpin Item on Paste"
+msgstr ""
+
+#: extension/prefs.js:310
+msgid "Automatically unpin an item when it is pasted."
+msgstr ""
+
+#: extension/prefs.js:328
+msgid "Recent Items Limits"
+msgstr ""
+
+#: extension/prefs.js:329
+msgid "Maximum number of items to keep in \"Recents\" for each feature."
+msgstr ""
+
+#: extension/prefs.js:334
+msgid "Maximum Recent Emojis"
+msgstr ""
+
+#: extension/prefs.js:335
+msgid "Maximum Recent Kaomojis"
+msgstr ""
+
+#: extension/prefs.js:336
+msgid "Maximum Recent Symbols"
+msgstr ""
+
+#: extension/prefs.js:337
+msgid "Maximum Recent GIFs"
+msgstr ""
+
+#: extension/prefs.js:348
+#, javascript-format
+msgid "Range: %d-%d. Default: %d."
+msgstr ""
+
+#: extension/prefs.js:371
+msgid "Auto-Paste Settings"
+msgstr ""
+
+#: extension/prefs.js:377
+msgid "Enable Auto-Paste"
+msgstr ""
+
+#: extension/prefs.js:378
+msgid ""
+"Automatically paste selected items instead of just copying to clipboard."
+msgstr ""
+
+#: extension/prefs.js:393
+msgid "Auto-Paste Emojis"
+msgstr ""
+
+#: extension/prefs.js:394
+msgid "Auto-Paste GIFs"
+msgstr ""
+
+#: extension/prefs.js:395
+msgid "Auto-Paste Kaomojis"
+msgstr ""
+
+#: extension/prefs.js:396
+msgid "Auto-Paste Symbols"
+msgstr ""
+
+#: extension/prefs.js:397
+msgid "Auto-Paste from Clipboard History"
+msgstr ""
+
+#: extension/prefs.js:419
+msgid "Emoji Settings"
+msgstr ""
+
+#: extension/prefs.js:420
+msgid "Configure emoji appearance and behavior."
+msgstr ""
+
+#: extension/prefs.js:425
+msgid "Enable Custom Skin Tones"
+msgstr ""
+
+#: extension/prefs.js:426
+msgid "If off, skinnable emojis are neutral. If on, use the settings below."
+msgstr ""
+
+#: extension/prefs.js:437
+msgid "Light"
+msgstr ""
+
+#: extension/prefs.js:438
+msgid "Medium-Light"
+msgstr ""
+
+#: extension/prefs.js:439
+msgid "Medium"
+msgstr ""
+
+#: extension/prefs.js:440
+msgid "Medium-Dark"
+msgstr ""
+
+#: extension/prefs.js:441
+msgid "Dark"
+msgstr ""
+
+#: extension/prefs.js:447
+msgid "Primary Tone / Single Emoji"
+msgstr ""
+
+#: extension/prefs.js:448
+msgid "For single emojis and the first person in pairs."
+msgstr ""
+
+#: extension/prefs.js:454
+msgid "Secondary Tone"
+msgstr ""
+
+#: extension/prefs.js:455
+msgid "For the second person in pairs."
+msgstr ""
+
+#: extension/prefs.js:515
+msgid "GIF Settings"
+msgstr ""
+
+#: extension/prefs.js:516
+msgid ""
+"To search for GIFs, you must select a provider and provide your own API key."
+msgstr ""
+
+#: extension/prefs.js:522
+msgid "GIF Provider"
+msgstr ""
+
+#: extension/prefs.js:523
+msgid "Select the service to use for fetching GIFs."
+msgstr ""
+
+#: extension/prefs.js:525
+msgid "Tenor"
+msgstr ""
+
+#: extension/prefs.js:525
+msgid "Imgur"
+msgstr ""
+
+#: extension/prefs.js:552
+msgid "Tenor API Key"
+msgstr ""
+
+#: extension/prefs.js:559
+msgid "Imgur Client ID"
+msgstr ""
+
+#: extension/prefs.js:574
+msgid "Limit GIF Preview Cache Size"
+msgstr ""
+
+#: extension/prefs.js:575
+msgid "Turn off for an unlimited cache size."
+msgstr ""
+
+#: extension/prefs.js:589
+msgid "Cache Size Limit (MB)"
+msgstr ""
+
+#: extension/prefs.js:590
+#, javascript-format
+msgid "Range: %d-%d MB. Default: %d MB."
+msgstr ""
+
+#: extension/prefs.js:687
+msgid "Data Management"
+msgstr ""
+
+#: extension/prefs.js:688
+msgid ""
+"Manage stored data and configure automatic cleanup. Manual actions cannot be "
+"undone."
+msgstr ""
+
+#: extension/prefs.js:694
+msgid "Clear Data at Login"
+msgstr ""
+
+#: extension/prefs.js:695
+msgid "Automatically clear selected data at every login"
+msgstr ""
+
+#: extension/prefs.js:710
+msgid "Clear Clipboard History"
+msgstr ""
+
+#: extension/prefs.js:711
+msgid "Clear Recent Emojis"
+msgstr ""
+
+#: extension/prefs.js:712
+msgid "Clear Recent GIFs"
+msgstr ""
+
+#: extension/prefs.js:713
+msgid "Clear Recent Kaomojis"
+msgstr ""
+
+#: extension/prefs.js:714
+msgid "Clear Recent Symbols"
+msgstr ""
+
+#: extension/prefs.js:728 extension/prefs.js:740
+msgid "Clear"
+msgstr ""
+
+#: extension/prefs.js:734
+msgid "Are you sure?"
+msgstr ""
+
+#: extension/prefs.js:735
+msgid "The selected data will be permanently deleted."
+msgstr ""
+
+#: extension/prefs.js:739
+msgid "Cancel"
+msgstr ""
+
+#: extension/prefs.js:756
+msgid "Recent Item History"
+msgstr ""
+
+#: extension/prefs.js:757
+msgid "Clear lists of recently used emojis, GIFs, etc."
+msgstr ""
+
+#: extension/prefs.js:762
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:163
+msgid "Recent Emojis"
+msgstr ""
+
+#: extension/prefs.js:762
+msgid "Permanently clears the list of recent emojis."
+msgstr ""
+
+#: extension/prefs.js:763
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:164
+msgid "Recent GIFs"
+msgstr ""
+
+#: extension/prefs.js:763
+msgid "Permanently clears the list of recent GIFs."
+msgstr ""
+
+#: extension/prefs.js:764
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:165
+msgid "Recent Kaomojis"
+msgstr ""
+
+#: extension/prefs.js:764
+msgid "Permanently clears the list of recent kaomojis."
+msgstr ""
+
+#: extension/prefs.js:765
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:166
+msgid "Recent Symbols"
+msgstr ""
+
+#: extension/prefs.js:765
+msgid "Permanently clears the list of recent symbols."
+msgstr ""
+
+#: extension/prefs.js:773
+msgid "All Recent Items"
+msgstr ""
+
+#: extension/prefs.js:774
+msgid "Permanently clears all of the above lists at once."
+msgstr ""
+
+#: extension/prefs.js:781
+msgid "Clipboard Data"
+msgstr ""
+
+#: extension/prefs.js:782
+msgid "Permanently delete your saved clipboard history and pinned items."
+msgstr ""
+
+#: extension/prefs.js:788
+msgid "Permanently clears all saved unpinned clipboard items."
+msgstr ""
+
+#: extension/prefs.js:794
+msgid "Pinned Items"
+msgstr ""
+
+#: extension/prefs.js:795
+msgid "Permanently clears all saved pinned clipboard items."
+msgstr ""
+
+#: extension/prefs.js:802
+msgid "Performance Caches"
+msgstr ""
+
+#: extension/prefs.js:803
+msgid "Clear temporary data used to improve loading speed."
+msgstr ""
+
+#: extension/prefs.js:808
+msgid "GIF Preview Cache"
+msgstr ""
+
+#: extension/prefs.js:809
+msgid "Permanently clears all downloaded GIF preview images."
+msgstr ""
+
+#: extension/features/Clipboard/tabClipboard.js:112
+#: extension/features/Clipboard/tabClipboard.js:579
+#: extension/features/Clipboard/tabClipboard.js:585
+msgid "Select All"
+msgstr ""
+
+#: extension/features/Clipboard/tabClipboard.js:133
+#: extension/features/Clipboard/tabClipboard.js:371
+msgid "Start Private Mode (Pause Recording)"
+msgstr ""
+
+#: extension/features/Clipboard/tabClipboard.js:147
+#: extension/features/Clipboard/tabClipboard.js:602
+msgid "Pin/Unpin Selected"
+msgstr ""
+
+#: extension/features/Clipboard/tabClipboard.js:160
+msgid "Delete Selected"
+msgstr ""
+
+#: extension/features/Clipboard/tabClipboard.js:368
+msgid "Stop Private Mode (Resume Recording)"
+msgstr ""
+
+#: extension/features/Clipboard/tabClipboard.js:582
+msgid "Deselect All"
+msgstr ""
+
+#: extension/features/Clipboard/tabClipboard.js:616
+msgid "Pin Selected"
+msgstr ""
+
+#: extension/features/Clipboard/tabClipboard.js:619
+msgid "Unpin Selected"
+msgstr ""
+
+#: extension/features/Clipboard/tabClipboard.js:671
+msgid "No results found."
+msgstr ""
+
+#: extension/features/Clipboard/tabClipboard.js:672
+msgid "Clipboard history is empty."
+msgstr ""
+
+#: extension/features/Clipboard/tabClipboard.js:687
+msgid "Pinned"
+msgstr ""
+
+#: extension/features/Clipboard/tabClipboard.js:707
+msgid "History"
+msgstr ""
+
+#: extension/features/GIF/tabGIF.js:187
+msgid "Online search is disabled."
+msgstr ""
+
+#: extension/features/GIF/tabGIF.js:366 extension/features/GIF/tabGIF.js:430
+#: extension/features/GIF/tabGIF.js:447
+#: extension/utilities/utilityCategorizedItemViewer.js:488
+msgid "Recents"
+msgstr ""
+
+#: extension/features/GIF/tabGIF.js:414
+msgid "No categories available."
+msgstr ""
+
+#: extension/features/GIF/tabGIF.js:464 extension/features/GIF/tabGIF.js:471
+msgid "Trending"
+msgstr ""
+
+#: extension/features/GIF/tabGIF.js:474
+msgid "Trending GIFs"
+msgstr ""
+
+#: extension/features/GIF/tabGIF.js:900
+msgid "No recent GIFs."
+msgstr ""
+
+#: extension/features/GIF/tabGIF.js:924
+msgid "No trending GIFs found."
+msgstr ""
+
+#: extension/features/GIF/tabGIF.js:957
+#, javascript-format
+msgid "No results found for '%s'."
+msgstr ""
+
+#: extension/features/GIF/tabGIF.js:1327
+#, javascript-format
+msgid ""
+"Error: %s\n"
+"Please check your API key and network connection."
+msgstr ""
+
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:132
+#: extension/utilities/utilityCategorizedItemViewer.js:570
+msgid "No recent items yet."
+msgstr ""
+
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:162
+msgid "Pinned Clipboard"
+msgstr ""
+
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:167
+msgid "Recent Clipboard History"
+msgstr ""
+
+#: extension/features/RecentlyUsed/tabRecentlyUsed.js:204
+msgid "Show All"
+msgstr ""
+
+#: extension/utilities/utilityCategorizedItemViewer.js:69
+msgid "Component configuration is invalid. Check logs."
+msgstr ""
+
+#: extension/utilities/utilityCategorizedItemViewer.js:340
+msgid "Loading..."
+msgstr ""
+
+#: extension/utilities/utilityCategorizedItemViewer.js:407
+msgid "Error loading data. Check logs."
+msgstr ""
+
+#: extension/utilities/utilityCategorizedItemViewer.js:568
+msgid "No items available."
+msgstr ""
+
+#: extension/utilities/utilityCategorizedItemViewer.js:569
+msgid "No items match your search."
+msgstr ""
+
+#: extension/utilities/utilitySearch.js:33
+msgid "Search..."
+msgstr ""

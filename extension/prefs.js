@@ -14,6 +14,10 @@ export default class AllInOneClipboardPreferences extends ExtensionPreferences {
      * @param {Adw.PreferencesWindow} window - The preferences window to populate.
      */
     fillPreferencesWindow(window) {
+        // Initialize translations
+        this.initTranslations('all-in-one-clipboard');
+
+        // Get the Gio.Settings instance for this extension
         const settings = this.getSettings();
 
         // Create main preferences page

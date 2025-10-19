@@ -1,6 +1,11 @@
+import { dgettext } from 'gettext';
+
+const DATA_DOMAIN = 'all-in-one-clipboard-content';
+
 /**
  * Parses the `symbols.json` format into a flat list of standardized
  * symbol objects that the application can easily use.
+ * Applies localization to category names.
  */
 export class SymbolsJsonParser {
     /**
@@ -33,7 +38,7 @@ export class SymbolsJsonParser {
                  continue;
             }
 
-            const categoryName = categoryEntry.name.trim();
+            const categoryName = dgettext(DATA_DOMAIN, categoryEntry.name.trim());
 
             for (const symbolChar of categoryEntry.symbols) {
                 if (typeof symbolChar === 'string' && symbolChar.trim() !== '') {

@@ -1,6 +1,11 @@
+import { dgettext } from 'gettext';
+
+const DATA_DOMAIN = 'all-in-one-clipboard-content';
+
 /**
  * Parses the categorized `emojis.json` format into a flat list of
  * standardized emoji objects that the application can easily use.
+ * Applies localization to category names, emoji names, and keywords.
  */
 export class EmojiJsonParser {
     /**
@@ -31,17 +36,19 @@ export class EmojiJsonParser {
                  continue; // Skip invalid category entries silently.
             }
 
-            const categoryName = category.name.trim();
+            const categoryName = dgettext(DATA_DOMAIN, category.name.trim());
 
             for (const rawEmojiEntry of category.emojis) {
                 // Validate the structure of each emoji entry within the category.
                 if (rawEmojiEntry && typeof rawEmojiEntry.emoji === 'string' && typeof rawEmojiEntry.name === 'string') {
                     standardizedData.push({
                         char: rawEmojiEntry.emoji,
-                        name: rawEmojiEntry.name,
+                        name: dgettext(DATA_DOMAIN, rawEmojiEntry.name),
                         category: categoryName,
                         skinToneSupport: rawEmojiEntry.skin_tone_support || false,
-                        keywords: Array.isArray(rawEmojiEntry.keywords) ? rawEmojiEntry.keywords : []
+                        keywords: Array.isArray(rawEmojiEntry.keywords)
+                            ? rawEmojiEntry.keywords.map(k => dgettext(DATA_DOMAIN, k))
+                            : []
                     });
                 }
             }
