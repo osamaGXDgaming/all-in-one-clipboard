@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Key Capture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background-color: #f7f9fb;
+            color: #1f2937;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #app {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #2563eb;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        
+        .instructions {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .instructions p {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .instructions ul {
+            list-style-position: inside;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        .instructions ul li {
+            margin-bottom: 4px;
+        }
+        
+        .mono {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .esc-key {
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+        
+        label:first-of-type {
+            margin-top: 0;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #1f2937;
+            resize: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        #input-area {
+            background-color: white;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+        
+        #output-area {
+            background-color: #f9fafb;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+        
+        .button-row {
+            margin-top: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        #copy-button {
+            background-color: #16a34a;
+            color: white;
+        }
+        
+        #copy-button:hover {
+            background-color: #15803d;
+        }
+        
+        #copy-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #clear-button {
+            background-color: #4b5563;
+            color: white;
+        }
+        
+        #clear-button:hover {
+            background-color: #374151;
+        }
+        
+        #copy-status {
+            font-size: 14px;
+            color: #15803d;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        
+        #copy-status.hidden {
+            display: none;
+        }
+        
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+            
+            #app {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .button-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            #copy-status {
+                margin-left: 0;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Instant Keystroke Capturer</h1>
+        <p class="subtitle">
+            Type or paste characters below. This application uses a time-based delimiter to automatically insert newlines into the output below.
+        </p>
+
+        <div class="instructions">
+            <p>Instructions:</p>
+            <ul>
+                <li>Start typing in the top box (field is auto-focused).</li>
+                <li>A pause longer than <span class="mono" id="timeout-display">50 ms</span> automatically adds a newline in the output box.</li>
+                <li>Press <span class="esc-key mono">Esc</span> or the <strong>Clear Output</strong> button to clear all captured text.</li>
+            </ul>
+        </div>
+
+        <label for="input-area">Type or Paste Here (Input Target):</label>
+        <textarea 
+            id="input-area" 
+            rows="3" 
+            placeholder="Start typing to capture characters..."
+        ></textarea>
+        
+        <label for="output-area">Processed Output (Time-Delimited):</label>
+        <textarea 
+            id="output-area" 
+            rows="10" 
+            readonly
+            placeholder="Processed text will appear here..."
+        ></textarea>
+
+        <div class="button-row">
+            <button id="copy-button">Copy to Clipboard</button>
+            <button id="clear-button">Clear Output</button>
+            <div id="copy-status" class="hidden">Copied!</div>
+        </div>
+    </div>
+
+    <script>
+        const INPUT_AREA = document.getElementById('input-area');
+        const OUTPUT_AREA = document.getElementById('output-area');
+        const COPY_BUTTON = document.getElementById('copy-button');
+        const CLEAR_BUTTON = document.getElementById('clear-button');
+        const COPY_STATUS = document.getElementById('copy-status');
+        const TYPING_TIMEOUT_MS = 50;
+
+        let capturedText = "";
+        let lastCaptureTime = 0;
+
+        function handleClear() {
+            capturedText = "";
+            INPUT_AREA.value = "";
+            OUTPUT_AREA.value = "";
+            lastCaptureTime = 0;
+            COPY_STATUS.classList.add('hidden');
+        }
+
+        CLEAR_BUTTON.addEventListener('click', handleClear);
+
+        window.addEventListener('load', () => {
+            handleClear();
+            INPUT_AREA.focus();
+        });
+
+        document.addEventListener('click', () => {
+            INPUT_AREA.focus();
+        });
+
+        INPUT_AREA.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                handleClear();
+                return;
+            }
+
+            const keysToIgnore = [
+                'Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab', 'Enter', 
+                'Backspace', 'Delete', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 
+                'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'
+            ];
+
+            if (keysToIgnore.includes(e.key) || e.ctrlKey || e.altKey || e.metaKey) {
+                return; 
+            }
+
+            e.preventDefault();
+            
+            const char = e.key;
+            const currentTime = performance.now();
+            const timeDelta = currentTime - lastCaptureTime;
+            
+            let charToWrite = char;
+
+            if (timeDelta > TYPING_TIMEOUT_MS && lastCaptureTime !== 0) {
+                charToWrite = '\n' + char;
+            }
+
+            capturedText += charToWrite;
+            OUTPUT_AREA.value = capturedText;
+            OUTPUT_AREA.scrollTop = OUTPUT_AREA.scrollHeight;
+            lastCaptureTime = currentTime;
+        });
+
+        INPUT_AREA.addEventListener('input', (e) => {
+            const currentValue = INPUT_AREA.value;
+            
+            if (currentValue.length === 0) {
+                return;
+            }
+            
+            INPUT_AREA.value = '';
+
+            const cleanInputData = currentValue.replace(/[\r\n]+/g, '');
+
+            if (cleanInputData.length === 0) {
+                return;
+            }
+
+            const currentTime = performance.now();
+            const timeDelta = currentTime - lastCaptureTime;
+
+            let prefix = "";
+            if (timeDelta > TYPING_TIMEOUT_MS && lastCaptureTime !== 0) {
+                prefix = '\n';
+            }
+
+            capturedText += prefix + cleanInputData;
+            OUTPUT_AREA.value = capturedText;
+            OUTPUT_AREA.scrollTop = OUTPUT_AREA.scrollHeight;
+            
+            lastCaptureTime = currentTime;
+        });
+
+        COPY_BUTTON.addEventListener('click', () => {
+            if (capturedText.length === 0) return;
+
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = capturedText;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+
+            try {
+                document.execCommand('copy');
+                COPY_STATUS.classList.remove('hidden');
+                setTimeout(() => COPY_STATUS.classList.add('hidden'), 2000);
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+            } finally {
+                document.body.removeChild(tempTextArea);
+            }
+        });
+        
+        document.getElementById('timeout-display').textContent = `${TYPING_TIMEOUT_MS} ms`;
+    </script>
+</body>
+</html>
