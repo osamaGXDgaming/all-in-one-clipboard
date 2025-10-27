@@ -1,0 +1,7 @@
+{
+  "default_sources": {
+    "emoji": "emojis_final.json",
+    "kaomoji": "kaomojis_final.json",
+    "symbol": "symbols_final.json"
+  }
+}

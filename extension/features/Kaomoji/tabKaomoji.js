@@ -44,10 +44,10 @@ class KaomojiTabContent extends St.Bin {
             categoryPropertyName: 'greaterCategory',
             enableTabScrolling: true,
             sortCategories: false,
+            // Ensure the payload is consistent for both old and new item formats.
             createSignalPayload: itemData => ({
-                'char': itemData.char || '',
-                'value': itemData.value || '',
-                'name': itemData.name || ''
+                'kaomoji': itemData.kaomoji || itemData.char || itemData.value || '',
+                'description': itemData.description || ''
             }),
             searchFilterFn: this._searchFilter.bind(this),
             renderGridItemFn: this._renderGridItem.bind(this),
@@ -81,9 +81,11 @@ class KaomojiTabContent extends St.Bin {
     async _onItemSelected(jsonPayload, extension) {
         try {
             const data = JSON.parse(jsonPayload);
-            const charToCopy = data.char || data.value;
+            // Get the kaomoji string to copy
+            const kaomojiToCopy = data.kaomoji;
+            if (!kaomojiToCopy) return;
 
-            St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, charToCopy);
+            St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, kaomojiToCopy);
 
             // Check if auto-paste is enabled
             if (AutoPaster.shouldAutoPaste(this._settings, 'auto-paste-kaomoji')) {
@@ -108,10 +110,18 @@ class KaomojiTabContent extends St.Bin {
      * @private
      */
     _searchFilter(item, searchText) {
-        return item.char.toLowerCase().includes(searchText) ||
-               (item.innerCategory && item.innerCategory.toLowerCase().includes(searchText)) ||
-               (item.greaterCategory && item.greaterCategory.toLowerCase().includes(searchText)) ||
-               (item.keywords && item.keywords.some(k => k.toLowerCase().includes(searchText)));
+        const lowerSearchText = searchText.toLowerCase();
+
+        // Check for the new 'keywords' array first for efficient searching.
+        if (item.keywords && Array.isArray(item.keywords)) {
+            return item.keywords.some(k => k.toLowerCase().includes(lowerSearchText));
+        }
+
+        // Fallback search for very old cache items that might not have a keywords array.
+        const kaomojiString = item.kaomoji || item.char || item.value || '';
+        return kaomojiString.toLowerCase().includes(lowerSearchText) ||
+               (item.innerCategory && item.innerCategory.toLowerCase().includes(lowerSearchText)) ||
+               (item.greaterCategory && item.greaterCategory.toLowerCase().includes(lowerSearchText));
     }
 
     /**
@@ -121,7 +131,8 @@ class KaomojiTabContent extends St.Bin {
      * @private
      */
     _renderGridItem(itemData) {
-        const displayString = itemData.char || itemData.value;
+        // Get the string to display by checking new and old properties.
+        const displayString = itemData.kaomoji || itemData.char || itemData.value;
         if (!displayString) return new St.Button();
 
         const button = new St.Button({
@@ -129,9 +140,16 @@ class KaomojiTabContent extends St.Bin {
             label: displayString,
             can_focus: true
         });
-        button.tooltip_text = itemData.innerCategory
-            ? `${itemData.innerCategory}: ${displayString}`
-            : displayString;
+
+        // Set tooltip text with description if available
+        if (itemData.description) {
+            button.tooltip_text = `${itemData.innerCategory}: ${displayString}\n${itemData.description}`;
+        } else if (itemData.innerCategory) {
+            button.tooltip_text = `${itemData.innerCategory}: ${displayString}`;
+        } else {
+            button.tooltip_text = displayString;
+        }
+
         return button;
     }
 

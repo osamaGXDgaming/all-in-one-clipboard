@@ -44,9 +44,9 @@ class SymbolsTabContent extends St.Bin {
             categoryPropertyName: 'category',
             enableTabScrolling: true,
             sortCategories: false,
+            // Ensure the payload is consistent for both old and new item formats.
             createSignalPayload: itemData => ({
-                'char': itemData.char || '',
-                'value': itemData.value || '',
+                'symbol': itemData.symbol || itemData.char || itemData.value || '',
                 'name': itemData.name || ''
             }),
             searchFilterFn: this._searchFilter.bind(this),
@@ -77,9 +77,11 @@ class SymbolsTabContent extends St.Bin {
     async _onItemSelected(jsonPayload, extension) {
         try {
             const data = JSON.parse(jsonPayload);
-            const charToCopy = data.char || data.value;
+            // Get the symbol string to copy
+            const symbolToCopy = data.symbol;
+            if (!symbolToCopy) return;
 
-            St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, charToCopy);
+            St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, symbolToCopy);
 
             // Check if auto-paste is enabled
             if (AutoPaster.shouldAutoPaste(this._settings, 'auto-paste-symbols')) {
@@ -104,27 +106,34 @@ class SymbolsTabContent extends St.Bin {
      * @private
      */
     _searchFilter(item, searchText) {
-        // Search against the character itself and its descriptive name/category.
-        return item.char.toLowerCase().includes(searchText) ||
-               (item.name && item.name.toLowerCase().includes(searchText));
+        // Prepare the user's input once, stripping any prefixes.
+        const cleanSearchText = searchText.toLowerCase().replace(/^(u\+|0x)/i, '');
+
+        // Check keywords first if available.
+        if (item.keywords && Array.isArray(item.keywords)) {
+            // Compare the clean search text against all keywords.
+            return item.keywords.some(k => k.toLowerCase().includes(cleanSearchText));
+        }
+
+        // Check symbol string and name.
+        const symbolString = item.char || item.value || '';
+        return symbolString.toLowerCase().includes(cleanSearchText) ||
+               (item.name && item.name.toLowerCase().includes(cleanSearchText));
     }
 
-    /**
-     * Renders a grid item button, passed to the viewer.
-     * @param {object} itemData - The symbol data object.
-     * @returns {St.Button} The configured button for the grid.
-     * @private
-     */
     _renderGridItem(itemData) {
-        const displayString = itemData.char || itemData.value;
+        // Get the symbol string to display
+        const displayString = itemData.symbol || itemData.char || itemData.value;
         if (!displayString) return new St.Button();
 
         const button = new St.Button({
             style_class: 'symbol-grid-button button',
             label: displayString,
             can_focus: true,
-            x_expand: false // Ensures layout stability in the grid.
+            x_expand: false
         });
+
+        // Set tooltip to the name if available, otherwise use the symbol itself.
         button.tooltip_text = itemData.name || displayString;
         return button;
     }
@@ -137,7 +146,6 @@ class SymbolsTabContent extends St.Bin {
      */
     _renderCategoryButton(categoryId) {
         const button = new St.Button({
-            // It's good practice to give this its own class for future styling.
             style_class: 'symbol-category-tab-button button',
             can_focus: true,
             label: _(categoryId),

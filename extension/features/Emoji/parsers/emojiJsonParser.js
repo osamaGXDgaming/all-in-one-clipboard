@@ -22,7 +22,9 @@ export class EmojiJsonParser {
      * @returns {Array<object>} A flattened array of standardized emoji objects.
      *   Each object includes `category`, `char`, `name`, `skinToneSupport`, and `keywords`.
      */
-    parse(rawCategoryData) {
+    parse(jsonData) {
+        // Access the 'data' key to get the array we need to process.
+        const rawCategoryData = jsonData.data;
         const standardizedData = [];
 
         if (!Array.isArray(rawCategoryData)) {
@@ -41,14 +43,23 @@ export class EmojiJsonParser {
             for (const rawEmojiEntry of category.emojis) {
                 // Validate the structure of each emoji entry within the category.
                 if (rawEmojiEntry && typeof rawEmojiEntry.emoji === 'string' && typeof rawEmojiEntry.name === 'string') {
+                    // Prepare codepoints for keyword inclusion
+                    const codepoints = rawEmojiEntry.codepoints || [];
+                    const strippedCodepoints = codepoints.map(c => c.replace(/^u\+/i, ''));
+
                     standardizedData.push({
                         char: rawEmojiEntry.emoji,
                         name: dgettext(DATA_DOMAIN, rawEmojiEntry.name),
                         category: categoryName,
                         skinToneSupport: rawEmojiEntry.skin_tone_support || false,
-                        keywords: Array.isArray(rawEmojiEntry.keywords)
-                            ? rawEmojiEntry.keywords.map(k => dgettext(DATA_DOMAIN, k))
-                            : []
+                        keywords: [ // Add all codepoint variations to keywords
+                            ...codepoints,
+                            ...strippedCodepoints,
+                            ...(Array.isArray(rawEmojiEntry.keywords)
+                                ? rawEmojiEntry.keywords.map(k => dgettext(DATA_DOMAIN, k))
+                                : [])
+                        ],
+                        codepoints: codepoints
                     });
                 }
             }

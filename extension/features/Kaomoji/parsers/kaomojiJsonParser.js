@@ -5,7 +5,7 @@ const DATA_DOMAIN = 'all-in-one-clipboard-content';
 /**
  * Parses the nested `kaomojis.json` format into a flat list of
  * standardized kaomoji objects that the application can easily use.
- * Applies localization to category names and keywords.
+ * Applies localization to category names, descriptions, and keywords.
  */
 export class KaomojiJsonParser {
     /**
@@ -20,9 +20,11 @@ export class KaomojiJsonParser {
      *
      * @param {Array<object>} rawGreaterCategoryData - The array parsed directly from `kaomojis.json`.
      * @returns {Array<object>} A flattened array of standardized kaomoji objects.
-     *   Each object includes `char`, `innerCategory`, `greaterCategory`, and `keywords`.
+     *   Each object includes `kaomoji`, `description`, `innerCategory`, `greaterCategory`, and `keywords`.
      */
-    parse(rawGreaterCategoryData) {
+    parse(jsonData) {
+        // Access the 'data' key to get the array we need to process.
+        const rawGreaterCategoryData = jsonData.data;
         const standardizedData = [];
 
         if (!Array.isArray(rawGreaterCategoryData)) {
@@ -33,7 +35,7 @@ export class KaomojiJsonParser {
         for (const greaterCategoryEntry of rawGreaterCategoryData) {
             // Validate the structure of each top-level category object.
             if (!greaterCategoryEntry || typeof greaterCategoryEntry.name !== 'string' || !Array.isArray(greaterCategoryEntry.categories)) {
-                 continue;
+                continue;
             }
 
             const greaterCategoryName = dgettext(DATA_DOMAIN, greaterCategoryEntry.name.trim());
@@ -45,20 +47,42 @@ export class KaomojiJsonParser {
                 }
 
                 const innerCategoryName = dgettext(DATA_DOMAIN, innerCategoryEntry.name.trim());
+                const innerCategorySlug = innerCategoryEntry.slug || '';
 
-                for (const emoticon of innerCategoryEntry.emoticons) {
-                    // Validate the emoticon entry.
-                    if (typeof emoticon === 'string' && emoticon.trim() !== '') {
-                        // Create a keywords array for better searchability.
-                        const keywords = [emoticon, innerCategoryName, greaterCategoryName].filter(Boolean);
-
-                        standardizedData.push({
-                            char: emoticon.trim(),
-                            innerCategory: innerCategoryName,
-                            greaterCategory: greaterCategoryName,
-                            keywords: keywords
-                        });
+                for (const emoticonObject of innerCategoryEntry.emoticons) {
+                    if (!emoticonObject || typeof emoticonObject.kaomoji !== 'string' || emoticonObject.kaomoji.trim() === '') {
+                        continue;
                     }
+
+                    const kaomoji = emoticonObject.kaomoji.trim();
+                    // Apply localization to the description if it exists.
+                    const description = emoticonObject.description ? dgettext(DATA_DOMAIN, emoticonObject.description) : '';
+
+                    // Apply localization to each provided keyword.
+                    const providedKeywords = Array.isArray(emoticonObject.keywords)
+                        ? emoticonObject.keywords.map(k => dgettext(DATA_DOMAIN, k))
+                        : [];
+
+                    const emoticonSlug = emoticonObject.slug || '';
+
+                    // Combine all relevant keywords into a single array.
+                    const allKeywords = [
+                        kaomoji,
+                        description,
+                        ...providedKeywords,
+                        innerCategoryName,
+                        greaterCategoryName,
+                        innerCategorySlug,
+                        emoticonSlug,
+                    ].filter(Boolean); // Filter out any empty/null values
+
+                    standardizedData.push({
+                        kaomoji: kaomoji,
+                        description: description,
+                        innerCategory: innerCategoryName,
+                        greaterCategory: greaterCategoryName,
+                        keywords: allKeywords
+                    });
                 }
             }
         }

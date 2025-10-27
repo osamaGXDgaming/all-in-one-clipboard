@@ -256,8 +256,20 @@ class EmojiTabContent extends St.Bin {
      * @private
      */
     _searchFilter(item, searchText) {
-        return item.name.toLowerCase().includes(searchText) ||
-               (item.keywords && item.keywords.some(k => k.toLowerCase().includes(searchText)));
+        // Prepare the user's input once, stripping any prefixes.
+        const cleanSearchText = searchText.toLowerCase().replace(/^(u\+|0x)/i, '');
+
+        // Check the emoji character first.
+        if (item.name.toLowerCase().includes(cleanSearchText)) {
+            return true;
+        }
+
+        // Check keywords first if available.
+        if (item.keywords && item.keywords.some(k => k.toLowerCase().includes(cleanSearchText))) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
