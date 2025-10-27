@@ -81,7 +81,7 @@ def main():
         if not json_file_path.exists():
             print(f"Warning: '{json_file_path}' not found, skipping.")
             continue
-        
+
         try:
             with open(json_file_path, 'r', encoding='utf-8') as f:
                 # Load the whole object, then pass the '.data' part to the processor.
@@ -91,7 +91,7 @@ def main():
                 if data_array is None:
                     print(f"Error: Could not find 'data' key in '{json_file_path}'. Is the file finalized?")
                     continue
-                
+
                 # Call the correct function for this file type.
                 processor_func(data_array, translatable_strings)
         except (json.JSONDecodeError, Exception) as e:
@@ -99,7 +99,7 @@ def main():
 
     # Write to the .pot file.
     translatable_strings.discard('')
-    
+
     sorted_strings = sorted(list(translatable_strings))
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(POT_HEADER)
