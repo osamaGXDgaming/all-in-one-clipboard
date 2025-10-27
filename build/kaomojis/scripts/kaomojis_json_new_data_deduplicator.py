@@ -35,10 +35,10 @@ def deduplicate_detailed_kaomojis():
 
     # --- Step 2: Process the data and remove duplicates ---
     print("Scanning for duplicates in the detailed structure...")
-    
+
     # This map will store the location of the first instance of each kaomoji string.
     seen_kaomojis_map = {}
-    
+
     # This list will store the log of duplicates for the final report.
     duplicates_log = []
 
@@ -52,16 +52,16 @@ def deduplicate_detailed_kaomojis():
         for sub_category in main_category.get("categories", []):
             sub_name = sub_category.get("name")
             location = f"{main_name} > {sub_name}"
-            
+
             # We need to preserve all keys from the sub-category object.
             new_sub_cat = sub_category.copy()
             new_sub_cat["emoticons"] = [] # Start with an empty list to fill.
-            
+
             for emoticon_obj in sub_category.get("emoticons", []):
                 kaomoji_str = emoticon_obj.get("kaomoji")
                 if not kaomoji_str: # Skip if the object is malformed
                     continue
-                
+
                 if kaomoji_str in seen_kaomojis_map:
                     # This is a duplicate. Log it and skip this object.
                     first_seen_location = seen_kaomojis_map[kaomoji_str]
@@ -72,7 +72,7 @@ def deduplicate_detailed_kaomojis():
                     # Keep the entire object and record its location.
                     seen_kaomojis_map[kaomoji_str] = location
                     new_sub_cat["emoticons"].append(emoticon_obj)
-            
+
             # Only add the sub-category if it still has emoticons after cleaning.
             if new_sub_cat["emoticons"]:
                 new_main_cat["categories"].append(new_sub_cat)

@@ -23,7 +23,7 @@ def format_json_file(file_path, indent_level, output_path=None):
 
         # Determine the destination for the formatted file
         destination_path = output_path if output_path else file_path
-        
+
         # Step 2: Write and Serialize the data back to a file with formatting
         with open(destination_path, 'w', encoding='utf-8') as f:
             # json.dump() writes the Python object back to a JSON formatted string.
@@ -31,7 +31,7 @@ def format_json_file(file_path, indent_level, output_path=None):
             # - ensure_ascii=False: Preserves non-ASCII characters (like kaomojis)
             #   instead of converting them to escape sequences (\uXXXX).
             json.dump(data, f, indent=indent_level, ensure_ascii=False)
-        
+
         if destination_path == file_path:
             print(f"✅ Successfully formatted '{file_path}' in-place.")
         else:
@@ -60,7 +60,7 @@ def main():
         nargs='+',  # Allows one or more input files/directories
         help="One or more paths to JSON files or directories containing JSON files."
     )
-    
+
     parser.add_argument(
         "-i", "--indent",
         type=int,

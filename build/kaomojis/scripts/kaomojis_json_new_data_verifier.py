@@ -55,7 +55,7 @@ def verify_structures():
         print(f"Loading old structure file: '{OLD_STRUCTURE_FILE.name}'...")
         with open(OLD_STRUCTURE_FILE, 'r', encoding='utf-8') as f:
             old_data = json.load(f)
-        
+
         print(f"Loading new structure file: '{NEW_STRUCTURE_FILE.name}'...")
         with open(NEW_STRUCTURE_FILE, 'r', encoding='utf-8') as f:
             new_data = json.load(f)
@@ -70,7 +70,7 @@ def verify_structures():
     print("\nBuilding location maps for comparison...")
     old_map = create_map_from_old_structure(old_data)
     new_map = create_map_from_new_structure(new_data)
-    
+
     print(f"Found {len(old_map)} unique kaomojis in the old structure file.")
     print(f"Found {len(new_map)} unique kaomojis in the new structure file.")
 
@@ -83,18 +83,18 @@ def verify_structures():
 
     # --- Step 4: Generate a detailed report ---
     print("\n--- Verification Report ---")
-    
+
     if not missing_from_new and not added_to_new:
         print("✅ SUCCESS: Perfect match! The two files are in sync.")
     else:
         print("❌ FAILED: Found discrepancies between the files.")
-        
+
         if missing_from_new:
             print(f"\n🚨 The following {len(missing_from_new)} kaomojis are MISSING from the new structure file:")
             for item in sorted(list(missing_from_new)):
                 location = old_map.get(item, "Unknown Location")
                 print(f"  - {item.ljust(25)} (Expected in: {location})")
-        
+
         if added_to_new:
             print(f"\n⚠️ The following {len(added_to_new)} kaomojis were UNEXPECTEDLY ADDED to the new structure file:")
             for item in sorted(list(added_to_new)):

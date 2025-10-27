@@ -8,11 +8,13 @@ import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.j
 import { ensureActorVisibleInScrollView } from 'resource:///org/gnome/shell/misc/animationUtils.js';
 
 import { createThemedIcon } from '../../utilities/utilityThemedIcon.js';
+import { Debouncer } from '../../utilities/utilityDebouncer.js';
 import { getGifCacheManager } from './logic/gifCacheManager.js';
 import { GifManager } from './logic/gifManager.js';
 import { MasonryLayout } from '../../utilities/utilityMasonryLayout.js';
 import { RecentItemsManager } from '../../utilities/utilityRecents.js';
 import { SearchComponent } from '../../utilities/utilitySearch.js';
+import { AutoPaster, getAutoPaster } from '../../utilities/utilityAutoPaste.js';
 
 // Constants
 const GIF_PROVIDER_KEY = 'gif-provider';
@@ -78,7 +80,6 @@ class GIFTabContent extends St.BoxLayout {
         this._isClearingForCategoryChange = false;
         this._recentItemsManager = null;
         this._recentsSignalId = 0;
-        this._searchTimeoutId = 0;
         this._isLoadingMore = false;
         this._nextPos = null;
         this._activeCategory = null;
@@ -91,8 +92,14 @@ class GIFTabContent extends St.BoxLayout {
         this._infoBin = null;
         this._infoLabel = null;
         this._infoBar = null;
-
+        this._currentSearchQuery = null;
         this._provider = this._settings.get_string(GIF_PROVIDER_KEY);
+
+        this._searchDebouncer = new Debouncer((query) => {
+            this._performSearch(query).catch(e => {
+                this._renderErrorState(e.message);
+            });
+        }, SEARCH_DEBOUNCE_TIME_MS);
 
         this._buildUISkeleton();
         this._connectProviderChangedSignal();
@@ -790,31 +797,17 @@ class GIFTabContent extends St.BoxLayout {
      * @param {boolean} [forceRefresh=false] - Force refresh even if already active
      * @private
      */
-    _setActiveCategory(category, forceRefresh = false) {
-        if (!category || (this._activeCategory?.id === category.id && !forceRefresh)) {
-            return;
-        }
-
+    _setActiveCategory(category) {
         this._activeCategory = category;
         this._highlightTab(category.id);
-        this._clearSearchBar();
+
+        // Clear search bar without triggering search
+        this._isClearingForCategoryChange = true;
+        this._searchComponent.clearSearch();
+        this._isClearingForCategoryChange = false;
+
         this._loadCategoryContent(category);
         this._focusSearchOrFirstItem();
-    }
-
-    /**
-     * Clear the search bar without triggering the search.
-     *
-     * @private
-     */
-    _clearSearchBar() {
-        this._isClearingForCategoryChange = true;
-
-        if (this._searchComponent) {
-            this._searchComponent.clearSearch();
-        }
-
-        this._isClearingForCategoryChange = false;
     }
 
     /**
@@ -978,40 +971,23 @@ class GIFTabContent extends St.BoxLayout {
             return;
         }
 
-        if (this._searchTimeoutId > 0) {
-            GLib.source_remove(this._searchTimeoutId);
-        }
-
+        // Trim leading/trailing whitespace
         const query = searchText.trim();
 
-        if (!query) {
+        // Only perform a search if the query is non-empty
+        if (query.length >= 1) {
+            this._currentSearchQuery = query;
+            this._searchDebouncer.trigger(query);
+        } else if (query.length === 0) {
+            // If the query is empty, clear the current search
+            this._currentSearchQuery = null;
+            this._searchDebouncer.cancel(); // Cancel any pending search
+
+            // Reload the active category content
             if (this._activeCategory) {
-                this._setActiveCategory(this._activeCategory, true);
+                this._loadCategoryContent(this._activeCategory);
             }
-            return;
         }
-
-        if (query.length < 2) {
-            return;
-        }
-
-        this._searchTimeoutId = GLib.timeout_add(
-            GLib.PRIORITY_DEFAULT,
-            SEARCH_DEBOUNCE_TIME_MS,
-            () => {
-                this._highlightTab(null);
-                this._activeCategory = {
-                    id: query,
-                    name: query,
-                    searchTerm: query
-                };
-                this._performSearch(query).catch(e => {
-                    this._renderErrorState(e.message);
-                });
-                this._searchTimeoutId = 0;
-                return GLib.SOURCE_REMOVE;
-            }
-        );
     }
 
     /**
@@ -1044,7 +1020,10 @@ class GIFTabContent extends St.BoxLayout {
     async _loadMoreResults() {
         this._isLoadingMore = true;
 
-        if (this._activeCategory?.id === 'trending') {
+        // If we're in search mode, use the search query
+        if (this._currentSearchQuery) {
+            await this._performSearch(this._currentSearchQuery, this._nextPos);
+        } else if (this._activeCategory?.id === 'trending') {
             await this._fetchAndDisplayTrending(this._nextPos);
         } else if (this._activeCategory?.searchTerm) {
             await this._performSearch(this._activeCategory.searchTerm, this._nextPos);
@@ -1376,12 +1355,8 @@ class GIFTabContent extends St.BoxLayout {
             this._recentItemsManager?.addItem(recentItem);
         }
 
-        const { shouldAutoPaste, triggerPaste } = await import(
-            '../../utilities/utilityAutoPaste.js'
-        );
-
-        if (shouldAutoPaste(this._settings, 'auto-paste-gif')) {
-            await triggerPaste();
+        if (AutoPaster.shouldAutoPaste(this._settings, 'auto-paste-gif')) {
+            await getAutoPaster().trigger();
         }
 
         this._extension._indicator.menu?.close();
@@ -1426,10 +1401,6 @@ class GIFTabContent extends St.BoxLayout {
             this._settings.disconnect(this._providerChangedSignalId);
         }
 
-        if (this._searchTimeoutId > 0) {
-            GLib.source_remove(this._searchTimeoutId);
-        }
-
         if (this._recentItemsManager && this._recentsSignalId > 0) {
             try {
                 this._recentItemsManager.disconnect(this._recentsSignalId);
@@ -1438,6 +1409,7 @@ class GIFTabContent extends St.BoxLayout {
             }
         }
 
+        this._searchDebouncer?.destroy();
         this._searchComponent?.destroy();
         this._recentItemsManager?.destroy();
 

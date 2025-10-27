@@ -26,14 +26,14 @@ def enrich_emoji_file_with_codepoints(input_path, output_path):
             # Iterate through each emoji object in the category
             for emoji_object in category['emojis']:
                 if 'emoji' in emoji_object and isinstance(emoji_object['emoji'], str):
-                    
+
                     # Get the emoji character string (which could be multi-char)
                     emoji_string = emoji_object['emoji']
-                    
+
                     # Create a list of codepoint strings from the character(s)
                     # This list comprehension handles both single and multi-char emojis perfectly.
                     codepoints = [f"U+{ord(char):04X}" for char in emoji_string]
-                    
+
                     # Add the new 'codepoints' field to the object
                     emoji_object['codepoints'] = codepoints
 

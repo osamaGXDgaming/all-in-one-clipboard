@@ -28,7 +28,7 @@ def enrich_json_file(input_path, output_path):
     for category in original_data:
         category_name = category.get("name", "Unknown")
         print(f"Processing category: '{category_name}'...")
-        
+
         new_category = {
             "name": category_name,
             "slug": category_name.lower().replace(" ", "-"),

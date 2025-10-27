@@ -25,16 +25,16 @@ def verify_symbol_order(filepath):
     for category in data:
         name = category.get("name", "Unknown")
         symbols = category.get("symbols", [])
-        
+
         if not symbols:
             print(f"⚪ Category '{name}': No symbols to check.")
             continue
-        
+
         sorted_symbols = sorted(symbols, key=ord)
         if symbols != sorted_symbols:
             print(f"❌ Category '{name}': NOT sorted correctly.")
             is_fully_sorted = False
-            
+
     print("\n--- Verification Complete ---")
     if is_fully_sorted:
         print("✅ SUCCESS: All categories are perfectly sorted by Unicode codepoint!")

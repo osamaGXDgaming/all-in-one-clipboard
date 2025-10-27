@@ -49,7 +49,7 @@ def reorder_detailed_data():
         print(f"Loading order source: '{ORDER_SOURCE_FILE.name}'")
         with open(ORDER_SOURCE_FILE, 'r', encoding='utf-8') as f:
             order_data = json.load(f)
-        
+
         print(f"Loading detailed file to sort: '{DETAILED_FILE_TO_SORT.name}'")
         with open(DETAILED_FILE_TO_SORT, 'r', encoding='utf-8') as f:
             detailed_data = json.load(f)
@@ -67,7 +67,7 @@ def reorder_detailed_data():
 
     # --- Step 3: Iterate through the original order and rebuild ---
     print("Re-ordering emoticons based on the source file...")
-    
+
     orphans_log = []
 
     # We will modify the 'detailed_data' structure in place.
@@ -75,7 +75,7 @@ def reorder_detailed_data():
         main_name = main_cat_orig.get("name")
         for sub_cat_orig in main_cat_orig.get("categories", []):
             sub_name = sub_cat_orig.get("name")
-            
+
             # Find the corresponding sub-category in the detailed data to modify it
             sub_cat_detailed = find_subcategory(detailed_data, main_name, sub_name)
             if not sub_cat_detailed:
@@ -91,11 +91,11 @@ def reorder_detailed_data():
                 detailed_obj = detailed_object_map.get(kaomoji_str)
                 if detailed_obj:
                     correctly_ordered_emoticons.append(detailed_obj)
-            
+
             # Find and append any "orphan" kaomojis from the detailed file
             detailed_category_set = {obj["kaomoji"] for obj in sub_cat_detailed.get("emoticons", [])}
             orphans = detailed_category_set - original_order_set
-            
+
             if orphans:
                 for orphan_str in sorted(list(orphans)): # Sort orphans for predictable order
                     detailed_obj = detailed_object_map.get(orphan_str)

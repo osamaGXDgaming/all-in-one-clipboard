@@ -7,6 +7,7 @@ import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.j
 import { ensureActorVisibleInScrollView } from 'resource:///org/gnome/shell/misc/animationUtils.js';
 
 import { createThemedIcon } from './utilityThemedIcon.js';
+import { Debouncer } from './utilityDebouncer.js';
 import { RecentItemsManager } from './utilityRecents.js';
 import { SearchComponent } from './utilitySearch.js';
 
@@ -91,6 +92,7 @@ class CategorizedItemViewer extends St.BoxLayout {
         this._lastActiveTabBeforeSearch = null;
         this._gridAllButtons = [];
         this._setActiveCategoryTimeoutId = 0;
+        this._searchDebouncer = new Debouncer(() => this._applyFiltersAndRenderGrid(), 250);
 
         this._buildUI();
 
@@ -430,7 +432,8 @@ class CategorizedItemViewer extends St.BoxLayout {
             this._activeCategory = this._lastActiveTabBeforeSearch;
         }
 
-        this._applyFiltersAndRenderGrid();
+        // Instead of rendering immediately, trigger the debouncer.
+        this._searchDebouncer.trigger();
     }
 
     /**
@@ -543,6 +546,7 @@ class CategorizedItemViewer extends St.BoxLayout {
     _renderGrid() {
         this._contentArea.destroy_all_children();
         this._gridAllButtons = [];
+        this._renderSession = {}; // Create a new session for this render pass
 
         // This is the scroll view we need a reference to.
         let scrollView = new St.ScrollView({
@@ -582,44 +586,68 @@ class CategorizedItemViewer extends St.BoxLayout {
             // This is the "grid view" path.
             let grid = new St.Widget({
                 style_class: 'grid-layout',
-                layout_manager: new Clutter.GridLayout(),
+                layout_manager: new Clutter.GridLayout({ column_homogeneous: true }),
                 x_expand: true,
                 x_align: Clutter.ActorAlign.FILL,
             });
-
-            let layout = grid.get_layout_manager();
-            layout.column_homogeneous = true;
-
-            let count = 0;
-            for (const itemData of this._filteredData) {
-                const col = count % this._config.itemsPerRow;
-                const row = Math.floor(count / this._config.itemsPerRow);
-                const itemButton = this._config.renderGridItemFn(itemData);
-
-                itemButton.connect('clicked', () => {
-                    const clickedValue = itemButton.get_label();
-                    const recentItem = { ...itemData, value: clickedValue, char: clickedValue };
-                    this._recentItemsManager.addItem(recentItem);
-                    const payload = this._config.createSignalPayload(recentItem);
-                    this.emit('item-selected', JSON.stringify(payload));
-                });
-
-                // Apply the focus-scrolling pattern here.
-                itemButton.connect('key-focus-in', () => {
-                    // Delay the scroll until after the UI has had a chance to allocate the actor.
-                    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                        ensureActorVisibleInScrollView(scrollView, itemButton);
-                        return GLib.SOURCE_REMOVE; // Ensures this runs only once
-                    });
-                });
-
-                this._gridAllButtons.push(itemButton);
-                layout.attach(itemButton, col, row, 1, 1);
-                count++;
-            }
             scrollableContainer.add_child(grid);
+
+            // Kick off the incremental rendering process
+            this._renderGridChunk(grid, 0, this._renderSession, scrollView);
         }
         this._contentArea.add_child(scrollView);
+    }
+
+    /**
+     * Renders a chunk of grid items asynchronously to keep the UI responsive.
+     * @param {St.Widget} grid - The grid layout widget to add items to.
+     * @param {number} startIndex - The starting index in this._filteredData to render.
+     * @param {object} session - The render session token to check against.
+     * @param {St.ScrollView} scrollView - The parent scroll view for focus handling.
+     * @private
+     */
+    _renderGridChunk(grid, startIndex, session, scrollView) {
+        // Abort if a new render has started or the component is destroyed.
+        if (session !== this._renderSession || !this.get_stage()) {
+            return;
+        }
+
+        const itemsPerChunk = 36; // Render in batches of 36 to avoid blocking the UI.
+        const endIndex = Math.min(startIndex + itemsPerChunk, this._filteredData.length);
+        const layout = grid.get_layout_manager();
+
+        for (let i = startIndex; i < endIndex; i++) {
+            const itemData = this._filteredData[i];
+            const col = i % this._config.itemsPerRow;
+            const row = Math.floor(i / this._config.itemsPerRow);
+            const itemButton = this._config.renderGridItemFn(itemData);
+
+            itemButton.connect('clicked', () => {
+                const clickedValue = itemButton.get_label();
+                const recentItem = { ...itemData, value: clickedValue, char: clickedValue };
+                this._recentItemsManager.addItem(recentItem);
+                const payload = this._config.createSignalPayload(recentItem);
+                this.emit('item-selected', JSON.stringify(payload));
+            });
+
+            itemButton.connect('key-focus-in', () => {
+                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                    ensureActorVisibleInScrollView(scrollView, itemButton);
+                    return GLib.SOURCE_REMOVE;
+                });
+            });
+
+            this._gridAllButtons.push(itemButton);
+            layout.attach(itemButton, col, row, 1, 1);
+        }
+
+        // If there are more items to render, schedule the next chunk.
+        if (endIndex < this._filteredData.length) {
+            GLib.idle_add(GLib.PRIORITY_LOW, () => {
+                this._renderGridChunk(grid, endIndex, session, scrollView);
+                return GLib.SOURCE_REMOVE;
+            });
+        }
     }
 
     /**
@@ -652,6 +680,7 @@ class CategorizedItemViewer extends St.BoxLayout {
         if(this._recentsChangedSignalId > 0) {
             try { this._recentItemsManager.disconnect(this._recentsChangedSignalId); } catch(e) { /* Ignore */ }
         }
+        this._searchDebouncer?.destroy();
         this._recentItemsManager?.destroy();
         this._searchComponent?.destroy();
 

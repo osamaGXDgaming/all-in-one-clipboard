@@ -34,11 +34,11 @@ def deduplicate_kaomojis():
 
     # --- Step 2: Process the data and remove duplicates ---
     print("Scanning for duplicates...")
-    
+
     # This map stores the location of the first instance of each kaomoji
     # Format: { "(＾▽＾)": "Positive > Joy" }
     seen_kaomojis_map = {}
-    
+
     # This list will store the log of duplicates found for the final report
     duplicates_log = []
 
@@ -52,9 +52,9 @@ def deduplicate_kaomojis():
         for sub_category in main_category.get("categories", []):
             sub_name = sub_category.get("name")
             location = f"{main_name} > {sub_name}"
-            
+
             new_sub_cat = {"name": sub_name, "emoticons": []}
-            
+
             for kaomoji in sub_category.get("emoticons", []):
                 if kaomoji in seen_kaomojis_map:
                     # This is a duplicate. Log it and skip it.
@@ -66,7 +66,7 @@ def deduplicate_kaomojis():
                     # Keep it and record its location.
                     seen_kaomojis_map[kaomoji] = location
                     new_sub_cat["emoticons"].append(kaomoji)
-            
+
             # Only add the sub-category if it still has emoticons after cleaning
             if new_sub_cat["emoticons"]:
                 new_main_cat["categories"].append(new_sub_cat)

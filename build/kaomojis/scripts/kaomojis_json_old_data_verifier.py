@@ -46,7 +46,7 @@ def verify_old_data_is_present():
         print(f"Loading original file: '{ORIGINAL_FILE.name}'...")
         with open(ORIGINAL_FILE, 'r', encoding='utf-8') as f:
             original_data = json.load(f)
-        
+
         print(f"Loading expanded file: '{EXPANDED_FILE.name}'...")
         with open(EXPANDED_FILE, 'r', encoding='utf-8') as f:
             expanded_data = json.load(f)
@@ -60,7 +60,7 @@ def verify_old_data_is_present():
     # --- Step 2: Extract kaomojis from both files ---
     original_kaomoji_map = extract_kaomoji_map(original_data)
     expanded_kaomoji_set = extract_kaomoji_set(expanded_data)
-    
+
     print(f"\nFound {len(original_kaomoji_map)} unique kaomojis in the original file.")
     print(f"Found {len(expanded_kaomoji_set)} unique kaomojis in the expanded file.")
 

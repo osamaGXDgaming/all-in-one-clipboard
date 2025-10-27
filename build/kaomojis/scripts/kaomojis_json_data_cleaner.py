@@ -30,7 +30,7 @@ def clean_kaomoji_string(s):
         char for char in s
         if unicodedata.category(char) not in CATEGORIES_TO_REMOVE
     ]
-    
+
     # Join the visible characters back into a string and strip leading/trailing whitespace.
     return "".join(cleaned_chars).strip()
 
@@ -58,7 +58,7 @@ def clean_kaomoji_file():
     for main_category in data:
         for sub_category in main_category.get("categories", []):
             location = f"{main_category.get('name')} > {sub_category.get('name')}"
-            
+
             emoticons = sub_category.get("emoticons", [])
             if not emoticons: continue
 

@@ -33,7 +33,7 @@ def sort_symbols_in_place(filepath):
     except Exception as e:
         print(f"❌ ERROR: Could not parse JSON file. Aborting. Reason: {e}")
         return
-        
+
     changes_made = False
     for category in data:
         if "symbols" in category and isinstance(category["symbols"], list):

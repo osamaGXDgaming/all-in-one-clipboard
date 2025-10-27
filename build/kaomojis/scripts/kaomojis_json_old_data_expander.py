@@ -139,7 +139,7 @@ def main():
         sub_cat_name = rule['sub_category']
 
         print(f"Processing rule for '{main_cat_name} -> {sub_cat_name}'...")
-        
+
         new_kaomojis_from_files = []
         for source_filename in rule['sources']:
             filepath = SOURCE_DIR / source_filename
@@ -162,7 +162,7 @@ def main():
 
         existing_emoticons = set(sub_cat_obj['emoticons'])
         unique_new_kaomojis = {k for k in new_kaomojis_from_files if k not in master_set}
-        
+
         added_count = len(unique_new_kaomojis)
         if added_count > 0:
             print(f"  - Adding {added_count} new unique kaomojis.")
